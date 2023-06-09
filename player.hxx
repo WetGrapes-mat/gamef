@@ -3,9 +3,6 @@
 #include "engine.hxx"
 #include "glm/glm.hpp"
 
-// int screen_width = 640;
-// int screen_height = 480;
-
 class player {
   public:
     player();

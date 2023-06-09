@@ -5,7 +5,7 @@
 #include "player.hxx"
 player::player() {}
 void player::shoot() {
-  bullets shoot_temp = bullets(my_pos);
+  bullets shoot_temp = bullets(my_pos, 0.0006f);
   shoots.push_back(shoot_temp);
   charge = false;
   cd = 0;
@@ -24,7 +24,6 @@ void player::update() {
     } else
       ++it;
   }
-  std::cout << shoots.size() << std::endl;
 }
 
 void player::render(std::unique_ptr<grp::engine, void (*)(grp::engine*)>& engine,

@@ -15,21 +15,6 @@
 
 #include "glm/glm.hpp"
 
-grp::triangle get_transformed_triangle(const grp::triangle& t,
-                                       const glm::mediump_mat3& result_matrix) {
-  grp::triangle result {t};
-
-  std::for_each(result.vertices.begin(), result.vertices.end(), [&](grp::vertex& v) {
-    glm::vec3 v_pos_source {v.x, v.y, 1.f};
-    glm::vec3 v_pos_result = result_matrix * v_pos_source;
-
-    v.x = v_pos_result[0];
-    v.y = v_pos_result[1];
-  });
-
-  return result;
-}
-
 int main(int /*argc*/, char* /*argv*/[]) {
   std::unique_ptr<grp::engine, void (*)(grp::engine*)> engine(grp::create_engine(),
                                                               grp::destroy_engine);

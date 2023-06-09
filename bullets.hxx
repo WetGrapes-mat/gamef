@@ -4,7 +4,7 @@
 
 class bullets {
   public:
-    bullets(const glm::vec3& pos);
+    bullets(const glm::vec3& pos, float speed);
     void update();
     void render(std::unique_ptr<grp::engine, void (*)(grp::engine*)>& engine,
                 std::unique_ptr<grp::texture>& texture);
@@ -14,6 +14,8 @@ class bullets {
     grp::triangle triangle_high;
     grp::triangle triangle_low;
     glm::vec3 bullet_pos;
-    float speed {0.0006f};
+    glm::vec3 bullet_move_pos;
+
+    float speed;
     glm::mediump_mat3 result_matrix;
 };
