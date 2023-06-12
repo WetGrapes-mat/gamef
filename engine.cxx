@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "SDL3/SDL_keycode.h"
-#include "glad/glad.h"
 #include <SDL3/SDL.h>
 
 #include "picopng.hxx"
@@ -176,7 +175,7 @@ class opengl_texture : public texture {
 
 //+++++++++++++++++++++++++++++++ENGINE+++++++++++++++++++++++++++++++
 
-class engine_impl final : public engine {
+class engine final : public iengine {
   public:
     glm::mat3 matrix {};
     std::string initialize(std::string_view /*config*/) final {
@@ -251,6 +250,8 @@ class engine_impl final : public engine {
 
     bool input_event(event& e, bool* state_key) {
       SDL_Event event;
+      // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
+      //           << state_key[5] << std::endl;
       if (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) {
           state_key[5] = true;
@@ -482,16 +483,16 @@ std::string opengl_shader_program::get_shader_code_from_file(const std::string_v
 
 static bool already_exist = false;
 
-engine* create_engine() {
+iengine* create_engine() {
   if (already_exist) {
     throw std::runtime_error("engine already exist");
   }
-  engine* result = new engine_impl();
+  iengine* result = new engine();
   already_exist = true;
   return result;
 }
 
-void destroy_engine(engine* e) {
+void destroy_engine(iengine* e) {
   if (already_exist == false) {
     throw std::runtime_error("engine not created");
   }
@@ -516,5 +517,5 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
   return result;
 }
 
-engine::~engine() {}
+iengine::~iengine() {}
 } // end namespace grp

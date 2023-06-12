@@ -1,11 +1,25 @@
-#pragma once
 #include <iostream>
 
-#include "bullets.hxx"
+#include "bullet.hxx"
 #include "player.hxx"
-player::player() {}
+player::player() {
+  // clang-format off
+  triangle_low = {
+    {-0.1f, -0.1f, 0.f, 0.f, 0.f, 0.f, 0.f, 1.f,
+    0.1f, -0.1f, 0.f, 0.f,0.f, 0.f, 1.f, 1.f,
+    -0.1f, 0.1f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+  };
+
+  triangle_high = {
+    {-0.1f, 0.1f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
+    0.1f, 0.1f, 0.f, 0.f,0.f, 0.f, 1.f, 0.f,
+    0.1f, -0.1f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f},
+  };
+
+  // clang-format on
+}
 void player::shoot() {
-  bullets shoot_temp = bullets(my_pos, 0.0006f);
+  bullet shoot_temp = bullet(my_pos, 0.0006f);
   shoots.push_back(shoot_temp);
   charge = false;
   cd = 0;
@@ -26,13 +40,12 @@ void player::update() {
   }
 }
 
-void player::render(std::unique_ptr<grp::engine, void (*)(grp::engine*)>& engine,
+void player::render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engine,
                     std::unique_ptr<grp::texture>& texture) {
-  grp::triangle triangle_low_transformed =
-    grp::get_transformed_triangle(triangle_low, result_matrix);
-  grp::triangle triangle_high_transformed =
-    grp::get_transformed_triangle(triangle_high, result_matrix);
+  this->triangle_low_transformed = grp::get_transformed_triangle(triangle_low, result_matrix);
+  this->triangle_high_transformed = grp::get_transformed_triangle(triangle_high, result_matrix);
 
   engine->render(triangle_low_transformed, texture.get());
   engine->render(triangle_high_transformed, texture.get());
+  AABB_data();
 }

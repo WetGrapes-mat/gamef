@@ -29,11 +29,11 @@ extern bool keyStates[];
 
 std::ostream& operator<<(std::ostream& stream, const event e);
 
-class engine;
+class iengine;
 
 /// return not null on success
-engine* create_engine();
-void destroy_engine(engine* e);
+iengine* create_engine();
+void destroy_engine(iengine* e);
 
 struct vertex {
     float x {};
@@ -60,9 +60,9 @@ class texture {
     virtual void bind() = 0;
 };
 
-class engine {
+class iengine {
   public:
-    virtual ~engine();
+    virtual ~iengine();
 
     virtual std::string initialize(std::string_view config) = 0;
     virtual bool input_event(event& e, bool* state_key) = 0;

@@ -17,6 +17,7 @@ list(
   "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_ship_green_big.png")
 file(COPY ${SHADERS} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/shader")
 file(COPY ${IMAGES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/img")
+file(COPY "wave_list.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 add_library(engine SHARED engine.cxx engine.hxx glad/glad.c glad/glad.h
                           glad/KHR/khrplatform.h)
@@ -34,9 +35,10 @@ add_executable(
   game.cxx
   player.cxx
   player.hxx
-  bullets.cxx
-  bullets.hxx
+  bullet.cxx
+  bullet.hxx
   enemy.hxx
-  enemy.cxx)
+  enemy.cxx
+  nlohmann/json.hpp)
 target_compile_features(game PUBLIC cxx_std_20)
 target_link_libraries(game PRIVATE engine)

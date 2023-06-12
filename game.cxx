@@ -9,16 +9,19 @@
 #include <string_view>
 #include <vector>
 
-#include "bullets.hxx"
+#include "bullet.hxx"
 #include "enemy.hxx"
 #include "engine.hxx"
+#include "ientity.hxx"
 #include "player.hxx"
 
 #include "glm/glm.hpp"
+#include "nlohmann/json.hpp"
 
 int main(int /*argc*/, char* /*argv*/[]) {
   using namespace std;
-  unique_ptr<grp::engine, void (*)(grp::engine*)> engine(grp::create_engine(), grp::destroy_engine);
+  unique_ptr<grp::iengine, void (*)(grp::iengine*)> engine(grp::create_engine(),
+                                                           grp::destroy_engine);
   int screen_width = 640;
   int screen_height = 480;
 
@@ -29,14 +32,23 @@ int main(int /*argc*/, char* /*argv*/[]) {
   unique_ptr<grp::texture> enemy_green_texture {
     engine->create_texture("./img/pixel_ship_green_big.png")};
 
-  //++++++++++++++++++hero++++++++++++++++++++
-
+  //++++++++++++++++++init++++++++++++++++++++
   player hero = player();
-
-  vector<bullets> enemy_shoots;
+  vector<bullet> enemy_shoots;
   vector<enemy> enemys;
-  for (int i = 0; i < 5; i++) {
-    enemys.push_back(enemy());
+  map<std::string, map<std::string, int>> enemysMap;
+  int wave = 0;
+
+  using json = nlohmann::json;
+  std::ifstream file("wave_list.json");
+  json jsonData;
+  file >> jsonData;
+  file.close();
+
+  for (const auto& [key, value] : jsonData.items()) {
+    for (const auto& [type, amount] : value.items()) {
+      enemysMap[key][type] = amount;
+    }
   }
 
   //++++++++++++++++++map triandle++++++++++++++++++++
@@ -59,6 +71,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   bool continue_loop = true;
   while (continue_loop) {
     grp::event event;
+    engine->input_event(event, grp::keyStates);
     while (engine->input_event(event, grp::keyStates)) {
       // a
       if (grp::keyStates[2]) {
@@ -70,6 +83,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
       }
       // w
       if (grp::keyStates[0]) {
+        // std::cout << grp::keyStates[0] << grp::keyStates[3] << std::endl;
         hero.my_pos[1] += hero.speed_y;
       }
       // s
@@ -89,25 +103,67 @@ int main(int /*argc*/, char* /*argv*/[]) {
 
     engine->render(triangle_map_low, map_texture.get());
     engine->render(triangle_map_high, map_texture.get());
-    //++++++++++++++++++bulets++++++++++++++++++++
 
     //++++++++++++++++++hero++++++++++++++++++++
     hero.update();
     hero.render(engine, hero_texture);
 
-    for (int i = 0; i < enemys.size(); i++) {
-      enemys[i].update(enemy_shoots);
-      enemys[i].render(engine, enemy_green_texture);
+    //++++++++++++++++++enemys++++++++++++++++++++
+
+    if (enemys.empty()) {
+      wave += 1;
+      std::cout << "wave: " << wave << std::endl;
+      for (const auto& pair : enemysMap) {
+        if (wave == stoi(pair.first)) {
+          for (const auto& pair : pair.second) {
+            for (int i = 0; i < pair.second; i++) {
+              enemys.push_back(enemy());
+            }
+          }
+        }
+      }
     }
 
-    for (int i = 0; i < hero.shoots.size(); i++) {
-      hero.shoots[i].update();
-      hero.shoots[i].render(engine, bulet_texture);
+    for (auto it_e = enemys.begin(); it_e != enemys.end();) {
+      it_e->update(enemy_shoots);
+      it_e->render(engine, enemy_green_texture);
+      if (hero.collision(it_e->pos_AABB))
+        it_e = enemys.erase(it_e);
+      else if (it_e->out_of_screen() <= -1)
+        it_e = enemys.erase(it_e);
+      else
+        ++it_e;
     }
 
-    for (int i = 0; i < enemy_shoots.size(); i++) {
-      enemy_shoots[i].update();
-      enemy_shoots[i].render(engine, bulet_texture);
+    //++++++++++++++++++bulets++++++++++++++++++++
+
+    for (auto it_b = hero.shoots.begin(); it_b != hero.shoots.end();) {
+      bool flag_collision = false;
+      for (auto it_e = enemys.begin(); it_e != enemys.end();) {
+        if (it_b->collision(it_e->pos_AABB)) {
+          it_e = enemys.erase(it_e);
+          flag_collision = true;
+        } else
+          ++it_e;
+      }
+      it_b->update();
+      it_b->render(engine, bulet_texture);
+      if (flag_collision)
+        it_b = hero.shoots.erase(it_b);
+      else
+        ++it_b;
+    }
+
+    for (auto it = enemy_shoots.begin(); it != enemy_shoots.end();) {
+      it->update();
+      it->render(engine, bulet_texture);
+      if (it->collision(hero.pos_AABB)) {
+        it = enemy_shoots.erase(it);
+        std::cout << " - 1 hp" << std::endl;
+      } else if (it->out_of_screen() <= -1.f)
+        it = enemy_shoots.erase(it);
+      else
+        ++it;
     }
     engine->swap_buffers();
   }
