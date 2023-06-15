@@ -51,6 +51,14 @@ int main(int /*argc*/, char* /*argv*/[]) {
     }
   }
 
+  grp::isound* music = engine->create_sound("./sound/main.wav");
+  grp::isound* kill_sound = engine->create_sound("./sound/E1.wav");
+  grp::isound* shoot_sound = engine->create_sound("./sound/laser.wav");
+
+  assert(music != nullptr);
+  assert(kill_sound != nullptr);
+  assert(shoot_sound != nullptr);
+
   //++++++++++++++++++map triandle++++++++++++++++++++
 
   // clang-format off
@@ -68,31 +76,34 @@ int main(int /*argc*/, char* /*argv*/[]) {
   // clang-format on
 
   //++++++++++++++++++main loop++++++++++++++++++++
+  // music->play(grp::isound::properties::looped);
+
   bool continue_loop = true;
   while (continue_loop) {
     grp::event event;
-    engine->input_event(event, grp::keyStates);
     while (engine->input_event(event, grp::keyStates)) {
       // a
-      if (grp::keyStates[2]) {
+      std::cout << hero.my_pos[0] << " " << hero.my_pos[1] << std::endl;
+
+      if (grp::keyStates[2] && -0.9f < hero.my_pos[0]) {
         hero.my_pos[0] -= hero.speed_x;
       }
       // d
-      if (grp::keyStates[3]) {
+      if (grp::keyStates[3] && hero.my_pos[0] < 0.9f) {
         hero.my_pos[0] += hero.speed_x;
       }
       // w
-      if (grp::keyStates[0]) {
-        // std::cout << grp::keyStates[0] << grp::keyStates[3] << std::endl;
+      if (grp::keyStates[0] && hero.my_pos[1] < 0.65f) {
         hero.my_pos[1] += hero.speed_y;
       }
       // s
-      if (grp::keyStates[1]) {
+      if (grp::keyStates[1] && -0.65f < hero.my_pos[1]) {
         hero.my_pos[1] -= hero.speed_y;
       }
       // space
       if (grp::keyStates[4] && hero.charge) {
         hero.shoot();
+        // shoot_sound->play(grp::isound::properties::once);
       }
       // escape
       if (grp::keyStates[5]) {
@@ -123,31 +134,20 @@ int main(int /*argc*/, char* /*argv*/[]) {
         }
       }
     }
-
-    for (auto it_e = enemys.begin(); it_e != enemys.end();) {
-      it_e->update(enemy_shoots);
-      it_e->render(engine, enemy_green_texture);
-      if (hero.collision(it_e->pos_AABB))
-        it_e = enemys.erase(it_e);
-      else if (it_e->out_of_screen() <= -1)
-        it_e = enemys.erase(it_e);
-      else
-        ++it_e;
-    }
-
     //++++++++++++++++++bulets++++++++++++++++++++
-
     for (auto it_b = hero.shoots.begin(); it_b != hero.shoots.end();) {
       bool flag_collision = false;
+      it_b->update();
+      it_b->render(engine, bulet_texture);
       for (auto it_e = enemys.begin(); it_e != enemys.end();) {
         if (it_b->collision(it_e->pos_AABB)) {
           it_e = enemys.erase(it_e);
           flag_collision = true;
+          // kill_sound->play(grp::isound::properties::once);
+          break;
         } else
           ++it_e;
       }
-      it_b->update();
-      it_b->render(engine, bulet_texture);
       if (flag_collision)
         it_b = hero.shoots.erase(it_b);
       else
@@ -165,6 +165,18 @@ int main(int /*argc*/, char* /*argv*/[]) {
       else
         ++it;
     }
+
+    for (auto it_e = enemys.begin(); it_e != enemys.end();) {
+      it_e->update(enemy_shoots);
+      it_e->render(engine, enemy_green_texture);
+      if (hero.collision(it_e->pos_AABB))
+        it_e = enemys.erase(it_e);
+      else if (it_e->out_of_screen() <= -1)
+        it_e = enemys.erase(it_e);
+      else
+        ++it_e;
+    }
+
     engine->swap_buffers();
   }
 

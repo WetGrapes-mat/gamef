@@ -15,6 +15,13 @@ class ientity {
       if (this->pos_AABB[1] < collision_entity[3] || this->pos_AABB[3] > collision_entity[1]) {
         return false;
       }
+      // std::cout << "pos_AABB "
+      //           << "x: " << pos_AABB[0] << ";y: " << pos_AABB[1] << ";x: " << pos_AABB[2]
+      //           << ";y: " << pos_AABB[3] << std::endl;
+      // std::cout << "collision_entity "
+      //           << "x: " << collision_entity[0] << ";y: " << collision_entity[1]
+      //           << ";x: " << collision_entity[2] << ";y: " << collision_entity[3] << std::endl;
+
       return true;
     };
     virtual void AABB_data() {

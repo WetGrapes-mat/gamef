@@ -20,7 +20,7 @@ class enemy : public ientity {
     glm::vec3 pos;
     glm::vec3 move_pos {0.f, 0.f, 1.f};
 
-    float speed_x {0.003f}, speed_y {-0.0003f};
+    float speed_x {0.003f}, speed_y {-0.0002f};
 
   private:
     float cd = 0.f;

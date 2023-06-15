@@ -79,6 +79,41 @@ const map<event, std::string> event_names {
   {       event::turn_off,           "close"}
 };
 
+//+++++++++++++++++++++++++++++++SOUND++++++++++++++++++++++++++++++
+
+static std::string_view get_sound_format_name(uint16_t format_value) {
+  static const std::map<int, std::string_view> format = {
+    {    AUDIO_U8,     "AUDIO_U8"},
+    {    AUDIO_S8,     "AUDIO_S8"},
+    {AUDIO_S16LSB, "AUDIO_S16LSB"},
+    {AUDIO_S16MSB, "AUDIO_S16MSB"},
+    {AUDIO_S32LSB, "AUDIO_S32LSB"},
+    {AUDIO_S32MSB, "AUDIO_S32MSB"},
+    {AUDIO_F32LSB, "AUDIO_F32LSB"},
+    {AUDIO_F32MSB, "AUDIO_F32MSB"},
+  };
+
+  auto it = format.find(format_value);
+  return it->second;
+}
+
+static std::size_t get_sound_format_size(uint16_t format_value) {
+  static const std::map<int, std::size_t> format = {
+    {    AUDIO_U8, 1},
+    {    AUDIO_S8, 1},
+    {AUDIO_S16LSB, 2},
+    {AUDIO_S16MSB, 2},
+    {AUDIO_S32LSB, 4},
+    {AUDIO_S32MSB, 4},
+    {AUDIO_F32LSB, 4},
+    {AUDIO_F32MSB, 4},
+  };
+
+  auto it = format.find(format_value);
+  return it->second;
+}
+//+++++++++++++++++++++++++++++++INIT_HELP+++++++++++++++++++++++++++++++
+
 bool keyStates[6] = {false};
 
 std::ostream& operator<<(std::ostream& out, event e) {
@@ -99,6 +134,9 @@ std::istream& operator>>(std::istream& is, vertex& v) {
   is >> v.z;
   return is;
 }
+
+class sound;
+isound::~isound() {}
 
 //+++++++++++++++++++++++++++++++TEXTURE+++++++++++++++++++++++++++++++
 class opengl_texture : public texture {
@@ -178,6 +216,8 @@ class opengl_texture : public texture {
 class engine final : public iengine {
   public:
     glm::mat3 matrix {};
+    int weight = 640;
+    int height = 480;
     std::string initialize(std::string_view /*config*/) final {
       using namespace std;
 
@@ -192,14 +232,15 @@ class engine final : public iengine {
 
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
-      window = SDL_CreateWindow("title", 640, 480, ::SDL_WINDOW_OPENGL);
-
+      window = SDL_CreateWindow("title", weight, height, ::SDL_WINDOW_OPENGL);
       if (window == nullptr) {
         const char* err_message = SDL_GetError();
         serr << "error: failed call SDL_CreateWindow: " << err_message << endl;
         SDL_Quit();
         return serr.str();
       }
+      SDL_GetWindowSizeInPixels(window, &weight, &height);
+
       int gl_major_ver = 4;
       int gl_minor_ver = 1;
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
@@ -221,6 +262,10 @@ class engine final : public iengine {
       if (gladLoadGLLoader(load_gl_pointer) == 0) {
         std::clog << "error: failed to initialize glad" << std::endl;
       }
+
+      glViewport(0, 0, weight, height);
+      CHECK_OPENGL()
+
       glGenBuffers(1, &vbo);
       CHECK_OPENGL()
 
@@ -244,6 +289,52 @@ class engine final : public iengine {
       CHECK_OPENGL()
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       CHECK_OPENGL()
+
+      // initialize audio
+      audio_device_spec.freq = 48000;
+      audio_device_spec.format = AUDIO_S16LSB;
+      audio_device_spec.channels = 2;
+      audio_device_spec.samples = 1024; // must be power of 2
+      audio_device_spec.callback = engine::audio_callback;
+      audio_device_spec.userdata = this;
+
+      const int num_audio_drivers = SDL_GetNumAudioDrivers();
+      for (int i = 0; i < num_audio_drivers; ++i) {
+        std::cout << "audio_driver #:" << i << " " << SDL_GetAudioDriver(i) << '\n';
+      }
+      std::cout << std::flush;
+
+      const char* default_audio_device_name = nullptr;
+
+      // SDL_FALSE - mean get only OUTPUT audio devices
+      const int num_audio_devices = SDL_GetNumAudioDevices(SDL_FALSE);
+      if (num_audio_devices > 0) {
+        default_audio_device_name = SDL_GetAudioDeviceName(num_audio_devices - 1, SDL_FALSE);
+        for (int i = 0; i < num_audio_devices; ++i) {
+          std::cout << "audio device #" << i << ": " << SDL_GetAudioDeviceName(i, SDL_FALSE)
+                    << '\n';
+        }
+      }
+      std::cout << std::flush;
+
+      audio_device = SDL_OpenAudioDevice(
+        default_audio_device_name, 0, &audio_device_spec, nullptr, SDL_AUDIO_ALLOW_ANY_CHANGE);
+
+      if (audio_device == 0) {
+        std::cerr << "failed open audio device: " << SDL_GetError();
+        throw std::runtime_error("audio failed");
+      } else {
+        std::cout << "--------------------------------------------\n";
+        std::cout << "audio device selected: " << default_audio_device_name << '\n'
+                  << "freq: " << audio_device_spec.freq << '\n'
+                  << "format: " << get_sound_format_name(audio_device_spec.format) << '\n'
+                  << "channels: " << static_cast<uint32_t>(audio_device_spec.channels) << '\n'
+                  << "samples: " << audio_device_spec.samples << '\n'
+                  << std::flush;
+
+        // unpause device
+        SDL_PlayAudioDevice(audio_device);
+      }
 
       return "";
     }
@@ -275,7 +366,6 @@ class engine final : public iengine {
           }
         }
       }
-
       return false;
     }
 
@@ -366,6 +456,12 @@ class engine final : public iengine {
       ;
     }
 
+    isound* create_sound(std::string_view path) final;
+    void destroy_sound(isound* sound) final {
+      // TODO FIXME first remove from sounds collection
+      delete sound;
+    }
+
   private:
     SDL_Window* window = nullptr;
     SDL_GLContext gl_context = nullptr;
@@ -373,7 +469,15 @@ class engine final : public iengine {
     GLuint vao {};
     opengl_shader_program triangle_program {};
     opengl_shader_program texture_program {};
+
+    friend class sound; // for audio_mutex
+    std::vector<sound*> sounds;
+    static void audio_callback(void*, uint8_t*, int);
+    static std::mutex audio_mutex;
+    SDL_AudioDeviceID audio_device;
+    SDL_AudioSpec audio_device_spec;
 };
+iengine::~iengine() {}
 
 //+++++++++++++++++++++++++++++++SHADER_PROGRAM+++++++++++++++++++++++++++++++
 
@@ -517,5 +621,144 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
   return result;
 }
 
-iengine::~iengine() {}
+//+++++++++++++++++++++++++++++++SOUND++++++++++++++++++++++++++++++
+class sound final : public isound {
+  public:
+    sound(std::string_view path, SDL_AudioDeviceID device, SDL_AudioSpec audio_spec);
+    ~sound() final;
+
+    void play(const properties prop) final {
+      std::lock_guard<std::mutex> lock(engine::audio_mutex);
+      // here we can change properties
+      // of sound and dont collade with multithreaded playing
+      current_index = 0;
+      is_playing = true;
+      is_looped = (prop == properties::looped);
+    }
+
+    std::unique_ptr<uint8_t[]> tmp_buf;
+    uint8_t* buffer;
+    uint32_t length;
+    uint32_t current_index = 0;
+    SDL_AudioDeviceID device;
+    bool is_playing = false;
+    bool is_looped = false;
+};
+
+sound::sound(std::string_view path, SDL_AudioDeviceID device_, SDL_AudioSpec device_audio_spec) :
+  buffer(nullptr), length(0), device(device_) {
+  SDL_RWops* file = SDL_RWFromFile(path.data(), "rb");
+  if (file == nullptr) {
+    throw std::runtime_error(std::string("can't open audio file: ") + path.data());
+  }
+
+  // freq, format, channels, and samples - used by SDL_LoadWAV_RW
+  SDL_AudioSpec file_audio_spec;
+
+  if (nullptr == SDL_LoadWAV_RW(file, 1, &file_audio_spec, &buffer, &length)) {
+    throw std::runtime_error(std::string("can't load wav: ") + path.data());
+  }
+
+  std::cout << "--------------------------------------------\n";
+  std::cout << "audio format for: " << path << '\n'
+            << "format: " << get_sound_format_name(file_audio_spec.format) << '\n'
+            << "sample_size: " << get_sound_format_size(file_audio_spec.format) << '\n'
+            << "channels: " << static_cast<uint32_t>(file_audio_spec.channels) << '\n'
+            << "frequency: " << file_audio_spec.freq << '\n'
+            << "length: " << length << '\n'
+            << "time: "
+            << static_cast<double>(length) /
+                 (file_audio_spec.channels * static_cast<uint32_t>(file_audio_spec.freq) *
+                  get_sound_format_size(file_audio_spec.format))
+            << "sec" << std::endl;
+  std::cout << "--------------------------------------------\n";
+
+  if (file_audio_spec.channels != device_audio_spec.channels ||
+      file_audio_spec.format != device_audio_spec.format ||
+      file_audio_spec.freq != device_audio_spec.freq) {
+    Uint8* output_bytes;
+    int output_length;
+
+    int convert_status = SDL_ConvertAudioSamples(file_audio_spec.format,
+                                                 file_audio_spec.channels,
+                                                 file_audio_spec.freq,
+                                                 buffer,
+                                                 static_cast<int>(length),
+                                                 device_audio_spec.format,
+                                                 device_audio_spec.channels,
+                                                 device_audio_spec.freq,
+                                                 &output_bytes,
+                                                 &output_length);
+    if (0 != convert_status) {
+      std::stringstream message;
+      message << "failed to convert WAV byte stream: " << SDL_GetError();
+      throw std::runtime_error(message.str());
+    }
+
+    SDL_free(buffer);
+    buffer = output_bytes;
+    length = static_cast<uint32_t>(output_length);
+  } else {
+    // no need to convert buffer, use as is
+  }
+}
+
+sound::~sound() {
+  if (!tmp_buf) {
+    SDL_free(buffer);
+  }
+  buffer = nullptr;
+  length = 0;
+}
+
+isound* engine::create_sound(std::string_view path) {
+  sound* s = new sound(path, audio_device, audio_device_spec);
+  {
+    // push_backsound_buffer_impl
+    std::lock_guard<std::mutex> lock(audio_mutex);
+    sounds.push_back(s);
+  }
+  return s;
+}
+
+std::mutex engine::audio_mutex;
+
+void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) {
+  std::lock_guard<std::mutex> lock(audio_mutex);
+  // no sound default
+  std::fill_n(stream, stream_size, '\0');
+
+  engine* e = static_cast<engine*>(engine_ptr);
+
+  for (sound* snd : e->sounds) {
+    if (snd->is_playing) {
+      uint32_t rest = snd->length - snd->current_index;
+      uint8_t* current_buff = &snd->buffer[snd->current_index];
+
+      if (rest <= static_cast<uint32_t>(stream_size)) {
+        // copy rest to buffer
+        SDL_MixAudioFormat(
+          stream, current_buff, e->audio_device_spec.format, rest, SDL_MIX_MAXVOLUME);
+        snd->current_index += rest;
+      } else {
+        SDL_MixAudioFormat(stream,
+                           current_buff,
+                           e->audio_device_spec.format,
+                           static_cast<uint32_t>(stream_size),
+                           SDL_MIX_MAXVOLUME);
+        snd->current_index += static_cast<uint32_t>(stream_size);
+      }
+
+      if (snd->current_index == snd->length) {
+        if (snd->is_looped) {
+          // start from begining
+          snd->current_index = 0;
+        } else {
+          snd->is_playing = false;
+        }
+      }
+    }
+  }
+}
+
 } // end namespace grp

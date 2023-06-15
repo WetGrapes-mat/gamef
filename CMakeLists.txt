@@ -15,6 +15,11 @@ list(
   "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_laser_yellow.png"
   "${CMAKE_CURRENT_SOURCE_DIR}/img/background-black.png"
   "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_ship_green_big.png")
+list(APPEND SOUNDS "${CMAKE_CURRENT_SOURCE_DIR}/sound/main.wav"
+     "${CMAKE_CURRENT_SOURCE_DIR}/sound/E1.wav"
+     "${CMAKE_CURRENT_SOURCE_DIR}/sound/laser.wav")
+
+file(COPY ${SOUNDS} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/sound")
 file(COPY ${SHADERS} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/shader")
 file(COPY ${IMAGES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/img")
 file(COPY "wave_list.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")

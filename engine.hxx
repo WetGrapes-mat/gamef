@@ -60,6 +60,14 @@ class texture {
     virtual void bind() = 0;
 };
 
+class isound {
+  public:
+    enum class properties { once, looped };
+
+    virtual ~isound();
+    virtual void play(const properties) = 0;
+};
+
 class iengine {
   public:
     virtual ~iengine();
@@ -69,6 +77,9 @@ class iengine {
     virtual void render(const triangle&) = 0;
     virtual void render(const triangle&, texture* const texture) = 0;
     virtual texture* create_texture(std::string_view path) = 0;
+
+    virtual isound* create_sound(std::string_view path) = 0;
+    virtual void destroy_sound(isound*) = 0;
 
     virtual void swap_buffers() = 0;
     virtual void uninitialize() = 0;

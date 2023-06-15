@@ -2,7 +2,7 @@
 
 enemy::enemy() {
   pos = {rand_spawn(-0.9f, 0.9f), rand_spawn(1.2f, 10.f), 1.f};
-  // pos = {rand_spawn(-0.9f, 0.9f), 0.3f, 1.f};
+  // pos = {rand_spawn(-0.9f, 0.9f), 0.8f, 1.f};
 
   this->scale = 1.f;
   // clang-format off
@@ -45,8 +45,8 @@ void enemy::render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engin
   this->triangle_low_transformed = grp::get_transformed_triangle(triangle_low, result_matrix);
   this->triangle_high_transformed = grp::get_transformed_triangle(triangle_high, result_matrix);
 
-  engine->render(triangle_low_transformed);
-  engine->render(triangle_high_transformed);
+  // engine->render(triangle_low_transformed);
+  // engine->render(triangle_high_transformed);
 
   engine->render(triangle_low_transformed, texture.get());
   engine->render(triangle_high_transformed, texture.get());
