@@ -1,31 +1,22 @@
 cmake_minimum_required(VERSION 3.26)
 project(opengl-minimal CXX C)
 
-list(
-  APPEND
-  SHADERS
-  "${CMAKE_CURRENT_SOURCE_DIR}/shader/texture_vertex.shader"
-  "${CMAKE_CURRENT_SOURCE_DIR}/shader/texture_fragment.shader"
-  "${CMAKE_CURRENT_SOURCE_DIR}/shader/triangle_vertex.shader"
-  "${CMAKE_CURRENT_SOURCE_DIR}/shader/triangle_fragment.shader")
-list(
-  APPEND
-  IMAGES
-  "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_ship_yellow.png"
-  "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_laser_yellow.png"
-  "${CMAKE_CURRENT_SOURCE_DIR}/img/background-black.png"
-  "${CMAKE_CURRENT_SOURCE_DIR}/img/pixel_ship_green_big.png")
-list(APPEND SOUNDS "${CMAKE_CURRENT_SOURCE_DIR}/sound/main.wav"
-     "${CMAKE_CURRENT_SOURCE_DIR}/sound/E1.wav"
-     "${CMAKE_CURRENT_SOURCE_DIR}/sound/laser.wav")
-
-file(COPY ${SOUNDS} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/sound")
-file(COPY ${SHADERS} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/shader")
-file(COPY ${IMAGES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/img")
+file(COPY ${CMAKE_SOURCE_DIR}/shader DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY "wave_list.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
-add_library(engine SHARED engine.cxx engine.hxx glad/glad.c glad/glad.h
-                          glad/KHR/khrplatform.h)
+file(GLOB IMGUI_SRC ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.cpp)
+file(GLOB IMGUI_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.h)
+
+add_library(
+  engine SHARED
+  engine.cxx
+  engine.hxx
+  glad/glad.c
+  glad/glad.h
+  glad/KHR/khrplatform.h
+  ${IMGUI_SRC}
+  ${IMGUI_INCLUDE})
 target_compile_features(engine PUBLIC cxx_std_20)
 target_include_directories(engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

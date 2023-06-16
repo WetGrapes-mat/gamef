@@ -1,7 +1,6 @@
 #pragma once
 #include "bullet.hxx"
 #include "engine.hxx"
-#include "glm/glm.hpp"
 #include "ientity.hxx"
 
 #include <iostream>

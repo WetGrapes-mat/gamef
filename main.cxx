@@ -9,15 +9,15 @@
 #include <string_view>
 #include <vector>
 
-#include "bullets.hxx"
+#include "bullet.hxx"
 #include "engine.hxx"
 #include "player.hxx"
 
 #include "glm/glm.hpp"
 
 int main(int /*argc*/, char* /*argv*/[]) {
-  std::unique_ptr<grp::engine, void (*)(grp::engine*)> engine(grp::create_engine(),
-                                                              grp::destroy_engine);
+  std::unique_ptr<grp::iengine, void (*)(grp::iengine*)> engine(grp::create_engine(),
+                                                                grp::destroy_engine);
   int screen_width = 640;
   int screen_height = 480;
 

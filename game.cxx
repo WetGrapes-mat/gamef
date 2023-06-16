@@ -13,9 +13,9 @@
 #include "enemy.hxx"
 #include "engine.hxx"
 #include "ientity.hxx"
+#include "imgui-src/imgui_impl_sdl3.h"
 #include "player.hxx"
 
-#include "glm/glm.hpp"
 #include "nlohmann/json.hpp"
 
 int main(int /*argc*/, char* /*argv*/[]) {
@@ -26,11 +26,14 @@ int main(int /*argc*/, char* /*argv*/[]) {
   int screen_height = 480;
 
   engine->initialize("");
-  unique_ptr<grp::texture> hero_texture {engine->create_texture("./img/pixel_ship_yellow.png")};
-  unique_ptr<grp::texture> bulet_texture {engine->create_texture("./img/pixel_laser_yellow.png")};
-  unique_ptr<grp::texture> map_texture {engine->create_texture("./img/background-black.png")};
+  unique_ptr<grp::texture> hero_texture {
+    engine->create_texture("./assets/images/pixel_ship_yellow.png")};
+  unique_ptr<grp::texture> bulet_texture {
+    engine->create_texture("./assets/images/pixel_laser_yellow.png")};
+  unique_ptr<grp::texture> map_texture {
+    engine->create_texture("./assets/images/background-black.png")};
   unique_ptr<grp::texture> enemy_green_texture {
-    engine->create_texture("./img/pixel_ship_green_big.png")};
+    engine->create_texture("./assets/images/pixel_ship_green_big.png")};
 
   //++++++++++++++++++init++++++++++++++++++++
   player hero = player();
@@ -51,9 +54,10 @@ int main(int /*argc*/, char* /*argv*/[]) {
     }
   }
 
-  grp::isound* music = engine->create_sound("./sound/main.wav");
-  grp::isound* kill_sound = engine->create_sound("./sound/E1.wav");
-  grp::isound* shoot_sound = engine->create_sound("./sound/laser.wav");
+  grp::isound* music = engine->create_sound("./assets/sounds/main.wav");
+  grp::isound* kill_sound = engine->create_sound("./assets/sounds/E1.wav");
+  grp::isound* shoot_sound = engine->create_sound("./assets/sounds/laser.wav");
+  // engine->set_cursor_visible(true);
 
   assert(music != nullptr);
   assert(kill_sound != nullptr);
@@ -83,7 +87,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
     grp::event event;
     while (engine->input_event(event, grp::keyStates)) {
       // a
-      std::cout << hero.my_pos[0] << " " << hero.my_pos[1] << std::endl;
+      // std::cout << hero.my_pos[0] << " " << hero.my_pos[1] << std::endl;
 
       if (grp::keyStates[2] && -0.9f < hero.my_pos[0]) {
         hero.my_pos[0] -= hero.speed_x;
@@ -176,6 +180,8 @@ int main(int /*argc*/, char* /*argv*/[]) {
       else
         ++it_e;
     }
+
+    engine->draw_imgui();
 
     engine->swap_buffers();
   }

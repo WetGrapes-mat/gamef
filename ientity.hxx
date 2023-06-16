@@ -1,6 +1,5 @@
 #pragma once
 #include "engine.hxx"
-#include "glm/glm.hpp"
 #include <iostream>
 
 class ientity {

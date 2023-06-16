@@ -31,7 +31,6 @@ std::ostream& operator<<(std::ostream& stream, const event e);
 
 class iengine;
 
-/// return not null on success
 iengine* create_engine();
 void destroy_engine(iengine* e);
 
@@ -80,6 +79,9 @@ class iengine {
 
     virtual isound* create_sound(std::string_view path) = 0;
     virtual void destroy_sound(isound*) = 0;
+
+    virtual void set_cursor_visible(bool visible) = 0;
+    virtual void draw_imgui() = 0;
 
     virtual void swap_buffers() = 0;
     virtual void uninitialize() = 0;

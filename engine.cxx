@@ -1,7 +1,3 @@
-#include "engine.hxx"
-
-#include <SDL3/SDL_stdinc.h>
-#include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -18,13 +14,16 @@
 #include <tuple>
 #include <vector>
 
-#include "SDL3/SDL_keycode.h"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_video.h>
+#include <imgui-src/imgui.h>
+#include <imgui-src/imgui_impl_opengl3.h>
+#include <imgui-src/imgui_impl_sdl3.h>
 
+#include "engine.hxx"
 #include "picopng.hxx"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #define CHECK_OPENGL()                                                  \
   {                                                                     \
@@ -55,7 +54,7 @@ namespace grp {
 //+++++++++++++++++++++++++++++++EVENT+++++++++++++++++++++++++++++++
 using namespace std;
 
-const vector<tuple<SDL_Keycode, string, event, event>> keys {
+const vector<tuple<SDL_Keycode, std::string, event, event>> keys {
   {     SDLK_w,      "w",      event::w_pressed,      event::w_released},
   {     SDLK_s,      "s",      event::s_pressed,      event::s_released},
   {     SDLK_a,      "a",      event::a_pressed,      event::a_released},
@@ -219,7 +218,7 @@ class engine final : public iengine {
     int weight = 640;
     int height = 480;
     std::string initialize(std::string_view /*config*/) final {
-      using namespace std;
+      // using namespace std;
 
       stringstream serr;
 
@@ -241,8 +240,8 @@ class engine final : public iengine {
       }
       SDL_GetWindowSizeInPixels(window, &weight, &height);
 
-      int gl_major_ver = 4;
-      int gl_minor_ver = 1;
+      int gl_major_ver = 2;
+      int gl_minor_ver = 0;
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
 
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, gl_context_profile);
@@ -336,14 +335,26 @@ class engine final : public iengine {
         SDL_PlayAudioDevice(audio_device);
       }
 
+      IMGUI_CHECKVERSION();
+
+      ImGui::CreateContext();
+      ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
+      ImGui_ImplOpenGL3_Init("#version 410 core");
+
       return "";
     }
 
-    bool input_event(event& e, bool* state_key) {
+    bool input_event(event& e, bool* state_key) override {
       SDL_Event event;
       // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
       //           << state_key[5] << std::endl;
+
       if (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        // if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+        //   std::cout << event.type << " mouse" << std::endl;
+        // }
+
         if (event.type == SDL_EVENT_QUIT) {
           state_key[5] = true;
           e = event::turn_off;
@@ -399,7 +410,7 @@ class engine final : public iengine {
       CHECK_OPENGL()
     }
 
-    void render(const triangle& triangle, texture* const texture) {
+    void render(const triangle& triangle, texture* const texture) override {
       glEnableVertexAttribArray(0);
       CHECK_OPENGL()
 
@@ -449,7 +460,7 @@ class engine final : public iengine {
     }
     void uninitialize() final {}
 
-    texture* create_texture(std::string_view path) {
+    texture* create_texture(std::string_view path) override {
       texture* r = new opengl_texture();
       r->load(path);
       return r;
@@ -462,7 +473,52 @@ class engine final : public iengine {
       delete sound;
     }
 
+    //+++++++++++++++++++++++++++++++IMGUI++++++++++++++++++++++++++++++
+
+    void set_cursor_visible(bool visible) override {
+      int failure;
+      if (visible) {
+        failure = SDL_ShowCursor();
+        ImGui::GetIO().ConfigFlags ^= ImGuiConfigFlags_NoMouseCursorChange;
+      } else {
+        failure = SDL_HideCursor();
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+      }
+
+      if (failure) {
+        std::cerr << "Error to set cursor visibility. Error: " << SDL_GetError() << std::endl;
+      }
+    };
+
+    void draw_imgui() override {
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplSDL3_NewFrame();
+      ImGui::NewFrame();
+      constexpr ImGuiWindowFlags game_gui_flags =
+        0 | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav |
+        ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoTitleBar;
+      // clang-format on
+      if (ImGui::Begin("Guns", 0, game_gui_flags)) {
+        ImGui::SetWindowPos({0, 0});
+        ImGui::Checkbox("Debug draw", &debug_draw);
+
+        ImGui::End();
+      }
+      if (ImGui::Begin("Develop")) {
+        ImGui::Checkbox("Debug draw", &debug_draw);
+      }
+      ImGui::End();
+
+      // ImGui::ShowDemoWindow();
+      ImGui::Render();
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    };
+
   private:
+    bool debug_draw = false;
+
     SDL_Window* window = nullptr;
     SDL_GLContext gl_context = nullptr;
     GLuint vbo {};
