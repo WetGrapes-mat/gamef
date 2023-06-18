@@ -11,8 +11,7 @@ class enemy : public ientity {
     enemy();
     void update(std::vector<bullet>& shoots);
     void update() override;
-    void render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engine,
-                std::unique_ptr<grp::texture>& texture) override;
+    void render(grp::iengine& engine, grp::texture& texture) override;
 
     float out_of_screen();
 

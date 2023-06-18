@@ -1,5 +1,6 @@
 #pragma once
 #include "bullet.hxx"
+#include "engine.hxx"
 #include "ientity.hxx"
 
 class player : public ientity {
@@ -7,8 +8,7 @@ class player : public ientity {
     player();
     void shoot();
     void update() override;
-    void render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engine,
-                std::unique_ptr<grp::texture>& texture) override;
+    void render(grp::iengine& engine, grp::texture& texture) override;
 
     std::vector<bullet> shoots;
     glm::vec3 my_pos {0.f, 0.f, 1.f};

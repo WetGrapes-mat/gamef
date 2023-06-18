@@ -28,7 +28,9 @@ target_link_libraries(engine PRIVATE SDL3::SDL3-shared OpenGL::GL glm::glm)
 
 add_executable(
   game
+  main.cxx
   game.cxx
+  game.hxx
   player.cxx
   player.hxx
   bullet.cxx

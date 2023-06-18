@@ -40,12 +40,11 @@ void player::update() {
   }
 }
 
-void player::render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engine,
-                    std::unique_ptr<grp::texture>& texture) {
+void player::render(grp::iengine& engine, grp::texture& texture) {
   this->triangle_low_transformed = grp::get_transformed_triangle(triangle_low, result_matrix);
   this->triangle_high_transformed = grp::get_transformed_triangle(triangle_high, result_matrix);
 
-  engine->render(triangle_low_transformed, texture.get());
-  engine->render(triangle_high_transformed, texture.get());
+  engine.render(triangle_low_transformed, &texture);
+  engine.render(triangle_high_transformed, &texture);
   AABB_data();
 }

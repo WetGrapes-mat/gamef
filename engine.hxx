@@ -30,6 +30,7 @@ extern bool keyStates[];
 std::ostream& operator<<(std::ostream& stream, const event e);
 
 class iengine;
+class igame;
 
 iengine* create_engine();
 void destroy_engine(iengine* e);
@@ -85,6 +86,17 @@ class iengine {
 
     virtual void swap_buffers() = 0;
     virtual void uninitialize() = 0;
+    int myVariable = 0;
+};
+
+class igame {
+  public:
+    igame() = default;
+    virtual ~igame();
+
+    igame(iengine& e);
+    virtual void update() = 0;
+    virtual void render() = 0;
 };
 
 class opengl_shader_program final {

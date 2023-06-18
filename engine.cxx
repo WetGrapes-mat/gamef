@@ -114,6 +114,15 @@ static std::size_t get_sound_format_size(uint16_t format_value) {
 //+++++++++++++++++++++++++++++++INIT_HELP+++++++++++++++++++++++++++++++
 
 bool keyStates[6] = {false};
+int countTrue(const bool arr[], int size) {
+  int count = 0;
+  for (int i = 0; i < size; i++) {
+    if (arr[i]) { // Если значение равно true
+      count++;
+    }
+  }
+  return count;
+}
 
 std::ostream& operator<<(std::ostream& out, event e) {
   out << event_names.at(e);
@@ -240,8 +249,8 @@ class engine final : public iengine {
       }
       SDL_GetWindowSizeInPixels(window, &weight, &height);
 
-      int gl_major_ver = 2;
-      int gl_minor_ver = 0;
+      int gl_major_ver = 4;
+      int gl_minor_ver = 1;
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
 
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, gl_context_profile);
@@ -339,7 +348,7 @@ class engine final : public iengine {
 
       ImGui::CreateContext();
       ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
-      ImGui_ImplOpenGL3_Init("#version 410 core");
+      ImGui_ImplOpenGL3_Init();
 
       return "";
     }
@@ -348,13 +357,13 @@ class engine final : public iengine {
       SDL_Event event;
       // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
       //           << state_key[5] << std::endl;
-
+      std::cout << "1" << std::endl;
       if (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL3_ProcessEvent(&event);
-        // if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-        //   std::cout << event.type << " mouse" << std::endl;
-        // }
+        std::cout << "22222222222222" << std::endl;
 
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        // if (countTrue(keyStates, 6) != 0)
+        //   event.type = SDL_EVENT_KEY_DOWN;
         if (event.type == SDL_EVENT_QUIT) {
           state_key[5] = true;
           e = event::turn_off;
@@ -367,6 +376,7 @@ class engine final : public iengine {
               return true;
             }
           }
+
         } else if (event.type == SDL_EVENT_KEY_UP) {
           for (int i = 0; i < keys.size(); i++) {
             if (std::get<0>(keys[i]) == event.key.keysym.sym) {
@@ -503,6 +513,11 @@ class engine final : public iengine {
       if (ImGui::Begin("Guns", 0, game_gui_flags)) {
         ImGui::SetWindowPos({0, 0});
         ImGui::Checkbox("Debug draw", &debug_draw);
+        ImGui::SetWindowFontScale(1.5f);
+        ImGui::Text("Score: %d", myVariable);
+        ImGui::SetWindowFontScale(1.f);
+
+        ImGui::Text("Test");
 
         ImGui::End();
       }
@@ -518,7 +533,6 @@ class engine final : public iengine {
 
   private:
     bool debug_draw = false;
-
     SDL_Window* window = nullptr;
     SDL_GLContext gl_context = nullptr;
     GLuint vbo {};
@@ -533,7 +547,7 @@ class engine final : public iengine {
     SDL_AudioDeviceID audio_device;
     SDL_AudioSpec audio_device_spec;
 };
-iengine::~iengine() {}
+iengine::~iengine() = default;
 
 //+++++++++++++++++++++++++++++++SHADER_PROGRAM+++++++++++++++++++++++++++++++
 

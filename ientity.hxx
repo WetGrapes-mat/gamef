@@ -5,8 +5,7 @@
 class ientity {
   public:
     virtual void update() = 0;
-    virtual void render(std::unique_ptr<grp::iengine, void (*)(grp::iengine*)>& engine,
-                        std::unique_ptr<grp::texture>& texture) = 0;
+    virtual void render(grp::iengine& engine, grp::texture& texture) = 0;
     virtual bool collision(std::array<float, 4> collision_entity) {
       if (this->pos_AABB[2] < collision_entity[0] || this->pos_AABB[0] > collision_entity[2]) {
         return false;
