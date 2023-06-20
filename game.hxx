@@ -1,6 +1,8 @@
 #include <map>
 #include <vector>
 
+#include "engine.hxx"
+
 #include "bullet.hxx"
 #include "enemy.hxx"
 #include "engine.hxx"
@@ -14,6 +16,8 @@ class game : public igame {
     std::vector<bullet> enemy_shoots;
     std::vector<enemy> enemys;
     std::map<std::string, std::map<std::string, int>> enemysMap;
+    std::map<std::string, float> configMap;
+
     int wave = 0;
     iengine& engine;
 
@@ -23,9 +27,15 @@ class game : public igame {
     void update() override;
     void render() override;
     void move_player(bool& flag);
+    void ImGui_menu();
 
   private:
+    bool debug_draw = false;
+    int myVariable = 0;
+
     void read_wave();
+    void read_config();
+
     void update_wave();
     void update_enemy_bullets();
     void render_enemy_bullets();
@@ -43,18 +53,7 @@ class game : public igame {
     grp::isound* music;
     grp::isound* kill_sound;
     grp::isound* shoot_sound;
-    // clang-format off
-   grp::triangle triangle_map_low {
-      {-1.f, -1.f, -1.f, 0.f, 0.f, 0.f, 0.f, 1.f,
-       1.f , -1.f, -1.f, 0.f,0.f, 0.f, 1.f, 1.f,
-        -1.f, 1.f, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f},
-    };
-    grp::triangle triangle_map_high {
-      {-1.f, 1.f, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-       1.f, 1.f, -1.f, 0.f,0.f, 0.f, 1.f, 0.f, 
-       1.f , -1.f, -1.f, 0.f, 0.f, 0.f, 1.f, 1.f},
-    };
-    // clang-format on
+    grp::sprite map = sprite(-1.f, 1.f, 1.f, -1.f);
 };
 
 } // namespace grp

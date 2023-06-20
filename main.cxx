@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "engine.hxx"
 #include "game.hxx"
 
 int main(int /*argc*/, char* /*argv*/[]) {
@@ -10,6 +9,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
   grp::iengine* engine = grp::create_engine();
   engine->initialize("");
   grp::game* game = new grp::game(*engine);
+  engine->set_game(game);
 
   bool continue_loop = true;
   while (continue_loop) {

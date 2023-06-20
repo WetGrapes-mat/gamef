@@ -24,6 +24,7 @@
 
 #include "engine.hxx"
 #include "picopng.hxx"
+#include <mutex>
 
 #define CHECK_OPENGL()                                                  \
   {                                                                     \
@@ -82,14 +83,14 @@ const map<event, std::string> event_names {
 
 static std::string_view get_sound_format_name(uint16_t format_value) {
   static const std::map<int, std::string_view> format = {
-    {    AUDIO_U8,     "AUDIO_U8"},
-    {    AUDIO_S8,     "AUDIO_S8"},
-    {AUDIO_S16LSB, "AUDIO_S16LSB"},
-    {AUDIO_S16MSB, "AUDIO_S16MSB"},
-    {AUDIO_S32LSB, "AUDIO_S32LSB"},
-    {AUDIO_S32MSB, "AUDIO_S32MSB"},
-    {AUDIO_F32LSB, "AUDIO_F32LSB"},
-    {AUDIO_F32MSB, "AUDIO_F32MSB"},
+    {    SDL_AUDIO_U8,     "AUDIO_U8"},
+    {    SDL_AUDIO_S8,     "AUDIO_S8"},
+    {SDL_AUDIO_S16LSB, "AUDIO_S16LSB"},
+    {SDL_AUDIO_S16MSB, "AUDIO_S16MSB"},
+    {SDL_AUDIO_S32LSB, "AUDIO_S32LSB"},
+    {SDL_AUDIO_S32MSB, "AUDIO_S32MSB"},
+    {SDL_AUDIO_F32LSB, "AUDIO_F32LSB"},
+    {SDL_AUDIO_F32MSB, "AUDIO_F32MSB"},
   };
 
   auto it = format.find(format_value);
@@ -98,14 +99,14 @@ static std::string_view get_sound_format_name(uint16_t format_value) {
 
 static std::size_t get_sound_format_size(uint16_t format_value) {
   static const std::map<int, std::size_t> format = {
-    {    AUDIO_U8, 1},
-    {    AUDIO_S8, 1},
-    {AUDIO_S16LSB, 2},
-    {AUDIO_S16MSB, 2},
-    {AUDIO_S32LSB, 4},
-    {AUDIO_S32MSB, 4},
-    {AUDIO_F32LSB, 4},
-    {AUDIO_F32MSB, 4},
+    {    SDL_AUDIO_U8, 1},
+    {    SDL_AUDIO_S8, 1},
+    {SDL_AUDIO_S16LSB, 2},
+    {SDL_AUDIO_S16MSB, 2},
+    {SDL_AUDIO_S32LSB, 4},
+    {SDL_AUDIO_S32MSB, 4},
+    {SDL_AUDIO_F32LSB, 4},
+    {SDL_AUDIO_F32MSB, 4},
   };
 
   auto it = format.find(format_value);
@@ -300,7 +301,7 @@ class engine final : public iengine {
 
       // initialize audio
       audio_device_spec.freq = 48000;
-      audio_device_spec.format = AUDIO_S16LSB;
+      audio_device_spec.format = SDL_AUDIO_S16LSB;
       audio_device_spec.channels = 2;
       audio_device_spec.samples = 1024; // must be power of 2
       audio_device_spec.callback = engine::audio_callback;
@@ -357,10 +358,7 @@ class engine final : public iengine {
       SDL_Event event;
       // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
       //           << state_key[5] << std::endl;
-      std::cout << "1" << std::endl;
       if (SDL_PollEvent(&event)) {
-        std::cout << "22222222222222" << std::endl;
-
         ImGui_ImplSDL3_ProcessEvent(&event);
         // if (countTrue(keyStates, 6) != 0)
         //   event.type = SDL_EVENT_KEY_DOWN;
@@ -418,6 +416,10 @@ class engine final : public iengine {
 
       glDisableVertexAttribArray(1);
       CHECK_OPENGL()
+    }
+    void render(const sprite& sprit, texture* const texture) override {
+      render(sprit.triangle_low_transformed, texture);
+      render(sprit.triangle_high_transformed, texture);
     }
 
     void render(const triangle& triangle, texture* const texture) override {
@@ -500,39 +502,20 @@ class engine final : public iengine {
       }
     };
 
+    void set_game(igame* g) override {
+      game = g;
+    };
     void draw_imgui() override {
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplSDL3_NewFrame();
       ImGui::NewFrame();
-      constexpr ImGuiWindowFlags game_gui_flags =
-        0 | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav |
-        ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
-        ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoTitleBar;
-      // clang-format on
-      if (ImGui::Begin("Guns", 0, game_gui_flags)) {
-        ImGui::SetWindowPos({0, 0});
-        ImGui::Checkbox("Debug draw", &debug_draw);
-        ImGui::SetWindowFontScale(1.5f);
-        ImGui::Text("Score: %d", myVariable);
-        ImGui::SetWindowFontScale(1.f);
 
-        ImGui::Text("Test");
-
-        ImGui::End();
-      }
-      if (ImGui::Begin("Develop")) {
-        ImGui::Checkbox("Debug draw", &debug_draw);
-      }
-      ImGui::End();
-
-      // ImGui::ShowDemoWindow();
+      ImGui::ShowDemoWindow();
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     };
 
   private:
-    bool debug_draw = false;
     SDL_Window* window = nullptr;
     SDL_GLContext gl_context = nullptr;
     GLuint vbo {};
@@ -691,6 +674,17 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
   return result;
 }
 
+void get_transformed_triangle(sprite& sprite) {
+  sprite.triangle_low_transformed =
+    get_transformed_triangle(sprite.triangle_low, sprite.result_matrix);
+  sprite.triangle_high_transformed =
+    get_transformed_triangle(sprite.triangle_high, sprite.result_matrix);
+  sprite.AABB[0] = sprite.triangle_low_transformed.vertices[2].x;
+  sprite.AABB[1] = sprite.triangle_low_transformed.vertices[2].y;
+  sprite.AABB[2] = sprite.triangle_high_transformed.vertices[2].x;
+  sprite.AABB[3] = sprite.triangle_high_transformed.vertices[2].y;
+}
+
 //+++++++++++++++++++++++++++++++SOUND++++++++++++++++++++++++++++++
 class sound final : public isound {
   public:
@@ -830,5 +824,35 @@ void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) 
     }
   }
 }
+//+++++++++++++++++++++++++++++++SPRITE++++++++++++++++++++++++++++++
+// clang-format off
+sprite::sprite(float x1, float y1, float x2, float y2){
+this->AABB ={x1,y1,x2,y2};
+this->triangle_low = {
+      {x1, y2, -1.f, 0.f, 0.f, 0.f, 0.f, 1.f,
+       x2 , y2, -1.f, 0.f,0.f, 0.f, 1.f, 1.f,
+        x1, y1, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+    };
+
+    this->triangle_high =  {
+      {x1, y1, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f,
+       x2, y1, -1.f, 0.f,0.f, 0.f, 1.f, 0.f, 
+       x2 , y2, -1.f, 0.f, 0.f, 0.f, 1.f, 1.f},
+    };
+    this->triangle_low_transformed = this->triangle_low;
+        this->triangle_high_transformed = this->triangle_high;
+
+
+}
+// clang-format on
+bool sprite::collision(std::array<float, 4> collision_entity) {
+  if (this->AABB[2] < collision_entity[0] || this->AABB[0] > collision_entity[2]) {
+    return false;
+  }
+  if (this->AABB[1] < collision_entity[3] || this->AABB[3] > collision_entity[1]) {
+    return false;
+  }
+  return true;
+};
 
 } // end namespace grp

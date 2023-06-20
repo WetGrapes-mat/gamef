@@ -4,6 +4,7 @@
 #include "ientity.hxx"
 
 #include <iostream>
+#include <map>
 #include <random>
 
 class enemy : public ientity {
@@ -12,18 +13,20 @@ class enemy : public ientity {
     void update(std::vector<bullet>& shoots);
     void update() override;
     void render(grp::iengine& engine, grp::texture& texture) override;
+    static void set_config(std::map<std::string, float>& configMap);
 
     float out_of_screen();
 
     glm::vec3 pos;
     glm::vec3 move_pos {0.f, 0.f, 1.f};
 
-    float speed_x {0.003f}, speed_y {-0.0002f};
+    static float speed_x, speed_y;
 
   private:
     float cd = 0.f;
-    float max_cd = 40.f;
-    float cd_step = 0.01f;
+    static float max_cd;
+    static float cd_step;
+    static float bullet_speed;
     float scale;
     float rand_spawn(float low, float max);
     void shoot(std::vector<bullet>& shoots);

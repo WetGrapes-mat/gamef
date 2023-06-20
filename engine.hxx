@@ -7,6 +7,10 @@
 #include <string_view>
 #include <vector>
 
+#include "imgui-src/imgui.h"
+#include "imgui-src/imgui_impl_opengl3.h"
+#include "imgui-src/imgui_impl_sdl3.h"
+
 namespace grp {
 /// dendy gamepad emulation events
 enum class event {
@@ -60,6 +64,19 @@ class texture {
     virtual void bind() = 0;
 };
 
+class sprite {
+  public:
+    sprite() = default;
+    sprite(float x1, float y1, float x2, float y2);
+    bool collision(std::array<float, 4> collision_entity);
+    glm::mediump_mat3 result_matrix;
+    grp::triangle triangle_low;
+    grp::triangle triangle_high;
+    std::array<float, 4> AABB;
+    grp::triangle triangle_low_transformed;
+    grp::triangle triangle_high_transformed;
+};
+
 class isound {
   public:
     enum class properties { once, looped };
@@ -75,6 +92,7 @@ class iengine {
     virtual std::string initialize(std::string_view config) = 0;
     virtual bool input_event(event& e, bool* state_key) = 0;
     virtual void render(const triangle&) = 0;
+    virtual void render(const sprite&, texture* const texture) = 0;
     virtual void render(const triangle&, texture* const texture) = 0;
     virtual texture* create_texture(std::string_view path) = 0;
 
@@ -86,7 +104,10 @@ class iengine {
 
     virtual void swap_buffers() = 0;
     virtual void uninitialize() = 0;
-    int myVariable = 0;
+    virtual void set_game(igame* g) = 0;
+
+  protected:
+    igame* game;
 };
 
 class igame {
@@ -126,5 +147,6 @@ class opengl_shader_program final {
 };
 
 triangle get_transformed_triangle(const triangle& t, const glm::mediump_mat3& result_matrix);
+void get_transformed_triangle(sprite& sprite);
 
 } // end namespace grp
