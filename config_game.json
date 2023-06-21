@@ -1,11 +1,12 @@
-{    "player_spead_x": 0.05,
-    "player_spead_y" : 0.05,
-    "player_max_cd" : 5.0,
-    "player_cd_step" : 0.01,
-    "enemys_speed_x" : 0.003,
-    "enemys_speed_y" : 0.00015,
+{   "player_max_cd" : 5.0,
     "enemys_max_cd": 70.0,
+    "player_cd_step" : 0.01,
     "enemys_cd_step" : 0.01,
-    "bullet_speed" : 0.0003
+
+    "player_spead_x": 5.0,
+    "player_spead_y" : 5.0,
+    "enemys_speed_x" : 0.3,
+    "enemys_speed_y" : 0.015,
+    "bullet_speed" : 0.03
 
 }

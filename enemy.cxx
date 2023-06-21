@@ -58,11 +58,11 @@ float enemy::cd_step = 0.01;
 float enemy::bullet_speed = 0.0001f;
 
 void enemy::set_config(std::map<std::string, float>& configMap) {
-  speed_x = configMap["enemys_speed_x"];
-  speed_y = -configMap["enemys_speed_y"];
+  speed_x = configMap["enemys_speed_x"] / 100;
+  speed_y = -configMap["enemys_speed_y"] / 100;
   max_cd = configMap["enemys_max_cd"];
   cd_step = configMap["enemys_cd_step"];
-  bullet_speed = configMap["bullet_speed"];
+  bullet_speed = configMap["bullet_speed"] / 100;
 }
 
 void enemy::update() {};

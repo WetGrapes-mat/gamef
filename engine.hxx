@@ -10,7 +10,6 @@
 #include "imgui-src/imgui.h"
 #include "imgui-src/imgui_impl_opengl3.h"
 #include "imgui-src/imgui_impl_sdl3.h"
-
 namespace grp {
 /// dendy gamepad emulation events
 enum class event {
@@ -118,6 +117,7 @@ class igame {
     igame(iengine& e);
     virtual void update() = 0;
     virtual void render() = 0;
+    virtual void ImGui_menu() = 0;
 };
 
 class opengl_shader_program final {

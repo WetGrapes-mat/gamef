@@ -4,7 +4,7 @@
 #include "player.hxx"
 #include <fstream>
 
-// #define MUSIC
+#define MUSIC
 
 namespace grp {
 
@@ -12,6 +12,8 @@ game::game(iengine& e) : engine(e) {
   read_config();
   player::set_config(configMap);
   enemy::set_config(configMap);
+  bullet_p_speed = configMap["bullet_speed"];
+  bullet_e_speed = configMap["bullet_speed"];
 
   hero = player();
   hero_texture = e.create_texture("./assets/images/pixel_ship_yellow.png");
@@ -64,7 +66,7 @@ void game::update_hero_bullets() {
 #ifdef MUSIC
         kill_sound->play(grp::isound::properties::once);
 #endif
-        myVariable += 1;
+        score += 1;
         break;
       } else
         ++it_enemy;
@@ -140,7 +142,7 @@ void game::update_enemys() {
     it_enemy->update(enemy_shoots);
     if (hero.collision(it_enemy->sprite)) {
       it_enemy = enemys.erase(it_enemy);
-      myVariable += 1;
+      score += 1;
     } else if (it_enemy->out_of_screen() <= -1)
       it_enemy = enemys.erase(it_enemy);
     else
@@ -169,6 +171,8 @@ void game::read_wave() {
 }
 
 void game::update_wave() {
+  if (wave == 20)
+    wave = 19;
   if (enemys.empty()) {
     wave += 1;
     std::cout << "wave: " << wave << std::endl;
@@ -204,19 +208,31 @@ void game::ImGui_menu() {
     ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
   // clang-format on
-  if (ImGui::Begin("Guns", 0, game_gui_flags)) {
+  if (ImGui::Begin("Score", 0, game_gui_flags)) {
     ImGui::SetWindowPos({0, 0});
-    ImGui::Checkbox("Debug draw", &debug_draw);
     ImGui::SetWindowFontScale(1.5f);
-    ImGui::Text("Score: %d", myVariable);
+    ImGui::Text("Score: %d", score);
     ImGui::SetWindowFontScale(1.f);
-
-    ImGui::Text("Test");
-
     ImGui::End();
   }
+  char formattedString[64];
+  std::snprintf(formattedString, sizeof(formattedString), "%.5f", bullet_p_speed);
+
   if (ImGui::Begin("Develop")) {
-    ImGui::Checkbox("Debug draw", &debug_draw);
+    ImGui::SliderFloat("player spead x", &configMap["player_spead_x"], 0.0f, 10.f);
+    ImGui::SliderFloat("player spead y", &configMap["player_spead_y"], 0.0f, 10.f);
+    ImGui::SliderFloat("player cd", &configMap["player_max_cd"], 0.0f, 50.0f);
+    ImGui::SliderFloat("player bullet spead", &bullet_p_speed, 0.0f, 0.06f);
+    ImGui::SliderFloat("enemys speed", &configMap["enemys_speed_y"], 0.0f, 0.03f);
+    ImGui::SliderFloat("enemys cd", &configMap["enemys_max_cd"], 0.0f, 200.f);
+    ImGui::SliderFloat("enemys bullet spead", &bullet_e_speed, 0.0f, 0.06f);
+
+    if (ImGui::Button("apply")) {
+      player::set_config(configMap);
+      enemy::set_config(configMap);
+      player::bullet_speed = bullet_p_speed / 100;
+      enemy::bullet_speed = bullet_e_speed / 100;
+    }
   }
   ImGui::End();
 }

@@ -21,12 +21,12 @@ class enemy : public ientity {
     glm::vec3 move_pos {0.f, 0.f, 1.f};
 
     static float speed_x, speed_y;
+    static float bullet_speed;
 
   private:
     float cd = 0.f;
     static float max_cd;
     static float cd_step;
-    static float bullet_speed;
     float scale;
     float rand_spawn(float low, float max);
     void shoot(std::vector<bullet>& shoots);

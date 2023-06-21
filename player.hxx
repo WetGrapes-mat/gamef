@@ -17,10 +17,10 @@ class player : public ientity {
     glm::vec3 my_pos {0.f, 0.f, 1.f};
     bool charge;
     static float speed_x, speed_y;
+    static float bullet_speed;
 
   private:
     float cd = 0.f;
-    static float bullet_speed;
     static float max_cd;
     static float cd_step;
 };

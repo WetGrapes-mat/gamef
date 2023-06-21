@@ -40,9 +40,9 @@ float player::cd_step = 0.01;
 float player::bullet_speed = 0.05f;
 
 void player::set_config(std::map<std::string, float>& configMap) {
-  speed_x = configMap["player_spead_x"];
-  speed_y = configMap["player_spead_y"];
+  speed_x = configMap["player_spead_x"] / 100;
+  speed_y = configMap["player_spead_y"] / 100;
   max_cd = configMap["player_max_cd"];
   cd_step = configMap["player_cd_step"];
-  bullet_speed = configMap["bullet_speed"];
+  bullet_speed = configMap["bullet_speed"] / 100;
 }

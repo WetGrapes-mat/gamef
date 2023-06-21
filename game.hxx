@@ -1,3 +1,4 @@
+#pragma once
 #include <map>
 #include <vector>
 
@@ -27,11 +28,13 @@ class game : public igame {
     void update() override;
     void render() override;
     void move_player(bool& flag);
-    void ImGui_menu();
+    void ImGui_menu() override;
 
   private:
     bool debug_draw = false;
-    int myVariable = 0;
+    int score = 0;
+    float bullet_e_speed = 0.0f;
+    float bullet_p_speed = 0.0f;
 
     void read_wave();
     void read_config();

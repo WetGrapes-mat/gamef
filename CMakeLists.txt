@@ -1,5 +1,13 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.16)
 project(opengl-minimal CXX C)
+
+if(SDL3_SRC_DIR)
+  add_subdirectory(
+    # Specifies the directory of the CMakeLists.txt file.
+    ${SDL3_SRC_DIR}
+    # Specifies the directory for the build outputs.
+    ${CMAKE_CURRENT_BINARY_DIR}/SDL_${ANDROID_ABI})
+endif()
 
 file(COPY ${CMAKE_SOURCE_DIR}/shader DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
@@ -12,38 +20,72 @@ if(WIN32)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+  # find_library(SDL3_LIB NAMES SDL3)
+else()
+  find_package(SDL3 REQUIRED)
+  find_package(OpenGL REQUIRED)
+  find_package(glm REQUIRED)
+endif()
+
 file(GLOB IMGUI_SRC ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.cpp)
 file(GLOB IMGUI_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.h)
 
-add_library(
-  engine SHARED
-  engine.cxx
-  engine.hxx
-  glad/glad.c
-  glad/glad.h
-  glad/KHR/khrplatform.h
-  ${IMGUI_SRC}
-  ${IMGUI_INCLUDE})
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+  add_library(
+    engine SHARED
+    game.cxx
+    game.hxx
+    player.cxx
+    player.hxx
+    bullet.cxx
+    bullet.hxx
+    enemy.hxx
+    enemy.cxx
+    nlohmann/json.hpp
+    engine.cxx
+    engine.hxx
+    glad/glad.c
+    glad/glad.h
+    glad/KHR/khrplatform.h
+    ${IMGUI_SRC}
+    ${IMGUI_INCLUDE})
+else()
+  add_library(
+    engine SHARED
+    engine.cxx
+    engine.hxx
+    glad/glad.c
+    glad/glad.h
+    glad/KHR/khrplatform.h
+    ${IMGUI_SRC}
+    ${IMGUI_INCLUDE})
+endif()
+
 target_compile_features(engine PUBLIC cxx_std_20)
 target_include_directories(engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package(SDL3 REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(glm REQUIRED)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+  target_link_libraries(engine PRIVATE SDL3::SDL3-shared android log EGL GLESv2)
+else()
+  target_link_libraries(engine PRIVATE SDL3::SDL3-shared OpenGL::GL glm::glm)
+endif()
 
-target_link_libraries(engine PRIVATE SDL3::SDL3-shared OpenGL::GL glm::glm)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
 
-add_executable(
-  game
-  main.cxx
-  game.cxx
-  game.hxx
-  player.cxx
-  player.hxx
-  bullet.cxx
-  bullet.hxx
-  enemy.hxx
-  enemy.cxx
-  nlohmann/json.hpp)
-target_compile_features(game PUBLIC cxx_std_20)
-target_link_libraries(game PRIVATE engine)
+else()
+  add_executable(
+    game
+    main.cxx
+    game.cxx
+    game.hxx
+    player.cxx
+    player.hxx
+    bullet.cxx
+    bullet.hxx
+    enemy.hxx
+    enemy.cxx
+    nlohmann/json.hpp)
+  target_compile_features(game PUBLIC cxx_std_20)
+  target_link_libraries(game PRIVATE engine)
+endif()

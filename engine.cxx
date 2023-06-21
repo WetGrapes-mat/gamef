@@ -18,9 +18,6 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
-#include <imgui-src/imgui.h>
-#include <imgui-src/imgui_impl_opengl3.h>
-#include <imgui-src/imgui_impl_sdl3.h>
 
 #include "engine.hxx"
 #include "picopng.hxx"
@@ -358,7 +355,7 @@ class engine final : public iengine {
       SDL_Event event;
       // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
       //           << state_key[5] << std::endl;
-      if (SDL_PollEvent(&event)) {
+      while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL3_ProcessEvent(&event);
         // if (countTrue(keyStates, 6) != 0)
         //   event.type = SDL_EVENT_KEY_DOWN;
@@ -371,6 +368,7 @@ class engine final : public iengine {
             if (std::get<0>(keys[i]) == event.key.keysym.sym) {
               state_key[i] = true;
               e = std::get<2>(keys[i]);
+              std::cout << e << std::endl;
               return true;
             }
           }
@@ -509,8 +507,9 @@ class engine final : public iengine {
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplSDL3_NewFrame();
       ImGui::NewFrame();
+      game->ImGui_menu();
 
-      ImGui::ShowDemoWindow();
+      // ImGui::ShowDemoWindow();
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     };
