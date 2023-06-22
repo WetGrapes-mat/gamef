@@ -14,9 +14,9 @@ void player::shoot() {
 }
 
 void player::update() {
-  const glm::mediump_mat3x3 aspect_matrix {1.f, 0.f, 0.f, 0.f, 640.f / 480.f, 0.f, 0.f, 0.f, 1.f};
-  const glm::mediump_mat3x3 move_matrix {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, my_pos[0], my_pos[1], 1.f};
-  this->sprite.result_matrix = aspect_matrix * move_matrix;
+  sprite.move_matrix = {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, my_pos[0], my_pos[1], 1.f};
+  sprite.scale_matrix = {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f};
+
   cd += cd_step;
   if (cd > max_cd)
     charge = true;

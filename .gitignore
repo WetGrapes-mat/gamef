@@ -5,3 +5,5 @@
 /build
 /temp
 .cache
+android-project/.gradle
+android-project/.idea

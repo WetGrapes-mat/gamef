@@ -1,5 +1,10 @@
 #pragma once
+#ifdef __ANDROID__
+#include <GLES3/gl3.h>
+#else
 #include "glad/glad.h"
+#endif
+
 #include "glm/glm.hpp"
 #include <array>
 #include <iosfwd>
@@ -10,6 +15,7 @@
 #include "imgui-src/imgui.h"
 #include "imgui-src/imgui_impl_opengl3.h"
 #include "imgui-src/imgui_impl_sdl3.h"
+#include "nlohmann/json.hpp"
 namespace grp {
 /// dendy gamepad emulation events
 enum class event {
@@ -69,6 +75,9 @@ class sprite {
     sprite(float x1, float y1, float x2, float y2);
     bool collision(std::array<float, 4> collision_entity);
     glm::mediump_mat3 result_matrix;
+    static glm::mediump_mat3x3 aspect_matrix;
+    glm::mediump_mat3x3 move_matrix;
+    glm::mediump_mat3x3 scale_matrix;
     grp::triangle triangle_low;
     grp::triangle triangle_high;
     std::array<float, 4> AABB;
@@ -104,6 +113,10 @@ class iengine {
     virtual void swap_buffers() = 0;
     virtual void uninitialize() = 0;
     virtual void set_game(igame* g) = 0;
+
+    // virtual nlohmann::json read_data_from_json(std::string_view path) = 0;
+    int weight = 640;
+    int height = 480;
 
   protected:
     igame* game;
@@ -148,5 +161,5 @@ class opengl_shader_program final {
 
 triangle get_transformed_triangle(const triangle& t, const glm::mediump_mat3& result_matrix);
 void get_transformed_triangle(sprite& sprite);
-
+nlohmann::json read_data_from_json(std::string_view path);
 } // end namespace grp

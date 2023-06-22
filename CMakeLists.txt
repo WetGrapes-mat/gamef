@@ -10,7 +10,8 @@ if(SDL3_SRC_DIR)
 endif()
 
 file(COPY ${CMAKE_SOURCE_DIR}/shader DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/sounds DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/images DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY "wave_list.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 file(COPY "config_game.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -50,6 +51,8 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     glad/KHR/khrplatform.h
     ${IMGUI_SRC}
     ${IMGUI_INCLUDE})
+  target_compile_definitions(engine PUBLIC IMGUI_IMPL_OPENGL_ES3)
+
 else()
   add_library(
     engine SHARED
@@ -66,7 +69,7 @@ target_compile_features(engine PUBLIC cxx_std_20)
 target_include_directories(engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-  target_link_libraries(engine PRIVATE SDL3::SDL3-shared android log EGL GLESv2)
+  target_link_libraries(engine PRIVATE SDL3::SDL3-shared android log EGL GLESv3)
 else()
   target_link_libraries(engine PRIVATE SDL3::SDL3-shared OpenGL::GL glm::glm)
 endif()

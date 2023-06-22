@@ -1,6 +1,5 @@
 #include "game.hxx"
 #include "enemy.hxx"
-#include "nlohmann/json.hpp"
 #include "player.hxx"
 #include <fstream>
 
@@ -16,14 +15,14 @@ game::game(iengine& e) : engine(e) {
   bullet_e_speed = configMap["bullet_speed"];
 
   hero = player();
-  hero_texture = e.create_texture("./assets/images/pixel_ship_yellow.png");
-  bulet_texture = e.create_texture("./assets/images/pixel_laser_yellow.png");
-  map_texture = e.create_texture("./assets/images/background-black.png");
-  enemy_green_texture = e.create_texture("./assets/images/pixel_ship_green_big.png");
+  hero_texture = e.create_texture("images/pixel_ship_yellow.png");
+  bulet_texture = e.create_texture("images/pixel_laser_yellow.png");
+  map_texture = e.create_texture("images/background-black.png");
+  enemy_green_texture = e.create_texture("images/pixel_ship_green_big.png");
 #ifdef MUSIC
-  music = engine.create_sound("./assets/sounds/main.wav");
-  kill_sound = engine.create_sound("./assets/sounds/E1.wav");
-  shoot_sound = engine.create_sound("./assets/sounds/laser.wav");
+  music = engine.create_sound("sounds/main.wav");
+  kill_sound = engine.create_sound("sounds/E1.wav");
+  shoot_sound = engine.create_sound("sounds/laser.wav");
   assert(music != nullptr);
   assert(kill_sound != nullptr);
   assert(shoot_sound != nullptr);
@@ -159,10 +158,7 @@ void game::render_enemys() {
 
 void game::read_wave() {
   using json = nlohmann::json;
-  std::ifstream file("wave_list.json");
-  json jsonData;
-  file >> jsonData;
-  file.close();
+  json jsonData = grp::read_data_from_json("wave_list.json");
   for (const auto& [key, value] : jsonData.items()) {
     for (const auto& [type, amount] : value.items()) {
       enemysMap[key][type] = amount;
@@ -193,10 +189,7 @@ void game::update_wave() {
 
 void game::read_config() {
   using json = nlohmann::json;
-  std::ifstream file("config_game.json");
-  json jsonData;
-  file >> jsonData;
-  file.close();
+  json jsonData = grp::read_data_from_json("config_game.json");
   for (const auto& [key, value] : jsonData.items()) {
     configMap[key] = value;
   }

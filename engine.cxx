@@ -14,10 +14,19 @@
 #include <tuple>
 #include <vector>
 
+#ifdef __ANDROID__
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include <android/log.h>
+#define GL_GLES_PROTOTYPES 1
+#define glActiveTexture_ glActiveTexture
+#include "game.hxx"
+#else
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_video.h>
+#endif
 
 #include "engine.hxx"
 #include "picopng.hxx"
@@ -154,34 +163,33 @@ class opengl_texture : public texture {
 
     void load(const std::string_view path) {
       std::vector<unsigned char> png_file_in_memory;
-      std::ifstream ifs(path.data(), std::ios_base::binary);
-      if (!ifs) {
+      SDL_RWops* io = SDL_RWFromFile(path.data(), "rb");
+
+      if (!io) {
         throw std::runtime_error("can't load texture1");
       }
-      ifs.seekg(0, std::ios_base::end);
-      std::streamoff pos_in_file = ifs.tellg();
-      png_file_in_memory.resize(static_cast<size_t>(pos_in_file));
-      ifs.seekg(0, std::ios_base::beg);
-      if (!ifs) {
+
+      Sint64 file_size = SDL_RWsize(io);
+      png_file_in_memory.resize(static_cast<size_t>(file_size));
+
+      if (SDL_RWread(io, &png_file_in_memory[0], file_size) != file_size) {
+        SDL_RWclose(io);
         throw std::runtime_error("can't load texture2");
       }
-      ifs.read(reinterpret_cast<char*>(png_file_in_memory.data()), pos_in_file);
 
-      if (!ifs.good()) {
-        throw std::runtime_error("can't load texture3");
-      }
+      SDL_RWclose(io);
 
       std::vector<unsigned char> image;
-
       int error = decodePNG(image,
                             gl_texture_width,
                             gl_texture_height,
                             &png_file_in_memory[0],
                             png_file_in_memory.size(),
                             false);
+
       if (error != 0) {
         std::cerr << "error: " << error << std::endl;
-        throw std::runtime_error("can't load texture4");
+        throw std::runtime_error("can't load texture3");
       }
 
       glGenTextures(1, &gl_texture_id);
@@ -219,11 +227,11 @@ class opengl_texture : public texture {
 
 //+++++++++++++++++++++++++++++++ENGINE+++++++++++++++++++++++++++++++
 
+glm::mediump_mat3x3 sprite::aspect_matrix = {1.f, 0.f, 0.f, 0.f, 640 / 480, 0.f, 0.f, 0.f, 1.f};
+
 class engine final : public iengine {
   public:
     glm::mat3 matrix {};
-    int weight = 640;
-    int height = 480;
     std::string initialize(std::string_view /*config*/) final {
       // using namespace std;
 
@@ -238,6 +246,18 @@ class engine final : public iengine {
 
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
+#ifdef __ANDROID__
+      {
+        const SDL_DisplayMode* dispale_mode = SDL_GetCurrentDisplayMode(1);
+        if (!dispale_mode) {
+          std::cout << "can't get current display mode: " << SDL_GetError() << std::endl;
+        }
+        weight = dispale_mode->w;
+        height = dispale_mode->h;
+      }
+#endif
+      sprite::aspect_matrix = {1.f, 0.f, 0.f, 0.f, weight / height, 0.f, 0.f, 0.f, 1.f};
+
       window = SDL_CreateWindow("title", weight, height, ::SDL_WINDOW_OPENGL);
       if (window == nullptr) {
         const char* err_message = SDL_GetError();
@@ -247,9 +267,17 @@ class engine final : public iengine {
       }
       SDL_GetWindowSizeInPixels(window, &weight, &height);
 
+#ifdef __APPLE__
       int gl_major_ver = 4;
       int gl_minor_ver = 1;
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
+
+#else
+      int gl_major_ver = 3;
+      int gl_minor_ver = 0;
+      int gl_context_profile = SDL_GL_CONTEXT_PROFILE_ES;
+
+#endif
 
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, gl_context_profile);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl_major_ver);
@@ -260,6 +288,7 @@ class engine final : public iengine {
       assert(gl_context != nullptr);
 
       std::clog << "OpenGl " << gl_major_ver << '.' << gl_minor_ver << '\n';
+#ifdef __APPLE__
 
       auto load_gl_pointer = [](const char* function_name) {
         SDL_FunctionPointer function_ptr = SDL_GL_GetProcAddress(function_name);
@@ -268,6 +297,11 @@ class engine final : public iengine {
       if (gladLoadGLLoader(load_gl_pointer) == 0) {
         std::clog << "error: failed to initialize glad" << std::endl;
       }
+#else
+// if (gladLoadGLES2Loader(load_gl_pointer) == 0) {
+//   std::clog << "error: failed to initialize glad" << std::endl;
+// }
+#endif
 
       glViewport(0, 0, weight, height);
       CHECK_OPENGL()
@@ -283,12 +317,16 @@ class engine final : public iengine {
       glBindVertexArray(vao);
       CHECK_OPENGL()
 
-      triangle_program.load_shader(GL_VERTEX_SHADER, "./shader/triangle_vertex.shader");
-      triangle_program.load_shader(GL_FRAGMENT_SHADER, "./shader/triangle_fragment.shader");
+      triangle_program.load_shader(GL_VERTEX_SHADER, "shader/triangle_vertex.shader");
+
+      triangle_program.load_shader(GL_FRAGMENT_SHADER, "shader/triangle_fragment.shader");
+
       triangle_program.prepare_program();
 
-      texture_program.load_shader(GL_VERTEX_SHADER, "./shader/texture_vertex.shader");
-      texture_program.load_shader(GL_FRAGMENT_SHADER, "./shader/texture_fragment.shader");
+      texture_program.load_shader(GL_VERTEX_SHADER, "shader/texture_vertex.shader");
+
+      texture_program.load_shader(GL_FRAGMENT_SHADER, "shader/texture_fragment.shader");
+
       texture_program.prepare_program();
 
       glEnable(GL_BLEND);
@@ -346,7 +384,11 @@ class engine final : public iengine {
 
       ImGui::CreateContext();
       ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
+#ifdef __ANDROID__
+      ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
       ImGui_ImplOpenGL3_Init();
+#endif
 
       return "";
     }
@@ -368,7 +410,7 @@ class engine final : public iengine {
             if (std::get<0>(keys[i]) == event.key.keysym.sym) {
               state_key[i] = true;
               e = std::get<2>(keys[i]);
-              std::cout << e << std::endl;
+              // std::cout << e << std::endl;
               return true;
             }
           }
@@ -622,18 +664,24 @@ void opengl_shader_program::validate_program() const {
 
 std::string opengl_shader_program::get_shader_code_from_file(const std::string_view path) const {
   std::string shader_code {};
+  std::cout << path.data() << std::endl;
 
-  std::ifstream file {path.data()};
+  SDL_RWops* io = SDL_RWFromFile(path.data(), "rb");
 
-  const std::filesystem::path fs_path {path.data()};
+  if (!io) {
+    throw std::runtime_error("can't load shader code1");
+  }
 
-  std::streamsize bytes_to_read = std::filesystem::file_size(fs_path);
+  Sint64 file_size = SDL_RWsize(io);
+  shader_code.resize(static_cast<size_t>(file_size));
 
-  shader_code.resize(bytes_to_read);
+  if (SDL_RWread(io, &shader_code[0], file_size) != file_size) {
+    SDL_RWclose(io);
+    throw std::runtime_error("can't load shader code2");
+  }
 
-  file.read(shader_code.data(), bytes_to_read);
+  SDL_RWclose(io);
 
-  file.close();
   return shader_code;
 }
 
@@ -674,6 +722,7 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
 }
 
 void get_transformed_triangle(sprite& sprite) {
+  sprite.result_matrix = sprite.aspect_matrix * sprite.move_matrix * sprite.scale_matrix;
   sprite.triangle_low_transformed =
     get_transformed_triangle(sprite.triangle_low, sprite.result_matrix);
   sprite.triangle_high_transformed =
@@ -853,5 +902,104 @@ bool sprite::collision(std::array<float, 4> collision_entity) {
   }
   return true;
 };
+class android_redirected_buf : public std::streambuf {
+  public:
+    android_redirected_buf() = default;
+
+  private:
+    // This android_redirected_buf buffer has no buffer. So every character
+    // "overflows" and can be put directly into the teed buffers.
+    int overflow(int c) override {
+      if (c == EOF) {
+        return !EOF;
+      } else {
+        if (c == '\n') {
+#ifdef __ANDROID__
+          // android log function add '\n' on every print itself
+          __android_log_print(ANDROID_LOG_ERROR, "GRP", "%s", message.c_str());
+#else
+          std::printf("%s\n", message.c_str()); // TODO test only
+#endif
+          message.clear();
+        } else {
+          message.push_back(static_cast<char>(c));
+        }
+        return c;
+      }
+    }
+
+    int sync() override {
+      return 0;
+    }
+
+    std::string message;
+};
+
+nlohmann::json read_data_from_json(std::string_view path) {
+  using json = nlohmann::json;
+
+  SDL_RWops* io = SDL_RWFromFile(path.data(), "rb");
+
+  if (!io) {
+    throw std::runtime_error("can't load JSON file");
+  }
+
+  Sint64 file_size = SDL_RWsize(io);
+  std::vector<char> buffer(static_cast<size_t>(file_size));
+
+  if (SDL_RWread(io, &buffer[0], file_size) != file_size) {
+    SDL_RWclose(io);
+    throw std::runtime_error("can't read JSON file");
+  }
+
+  SDL_RWclose(io);
+
+  std::string jsonString(buffer.data(), buffer.size());
+  json jsonData = json::parse(jsonString);
+
+  return jsonData;
+}
 
 } // end namespace grp
+
+#ifdef __ANDROID__
+
+int main(int /*argc*/, char* /*argv*/[]) {
+  auto cout_buf = std::cout.rdbuf();
+  auto cerr_buf = std::cerr.rdbuf();
+  auto clog_buf = std::clog.rdbuf();
+
+  grp::android_redirected_buf logcat;
+
+  std::cout.rdbuf(&logcat);
+  std::cerr.rdbuf(&logcat);
+  std::clog.rdbuf(&logcat);
+
+  using namespace std;
+
+  grp::iengine* engine = grp::create_engine();
+  engine->initialize("");
+  grp::game* game = new grp::game(*engine);
+  engine->set_game(game);
+
+  bool continue_loop = true;
+  while (continue_loop) {
+    game->move_player(continue_loop);
+
+    game->update();
+
+    game->render();
+
+    engine->draw_imgui();
+
+    engine->swap_buffers();
+  }
+
+  engine->uninitialize();
+  std::cout.rdbuf(cout_buf);
+  std::cerr.rdbuf(cerr_buf);
+  std::clog.rdbuf(clog_buf);
+
+  return EXIT_SUCCESS;
+}
+#endif
