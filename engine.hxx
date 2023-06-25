@@ -74,6 +74,8 @@ class sprite {
     sprite() = default;
     sprite(float x1, float y1, float x2, float y2);
     bool collision(std::array<float, 4> collision_entity);
+    bool collision(float x, float y);
+
     glm::mediump_mat3 result_matrix;
     static glm::mediump_mat3x3 aspect_matrix;
     glm::mediump_mat3x3 move_matrix;
@@ -99,6 +101,8 @@ class iengine {
 
     virtual std::string initialize(std::string_view config) = 0;
     virtual bool input_event(event& e, bool* state_key) = 0;
+    virtual bool input_event_android(std::vector<grp::sprite>& buttons, bool* state_key) = 0;
+
     virtual void render(const triangle&) = 0;
     virtual void render(const sprite&, texture* const texture) = 0;
     virtual void render(const triangle&, texture* const texture) = 0;
@@ -107,7 +111,6 @@ class iengine {
     virtual isound* create_sound(std::string_view path) = 0;
     virtual void destroy_sound(isound*) = 0;
 
-    virtual void set_cursor_visible(bool visible) = 0;
     virtual void draw_imgui() = 0;
 
     virtual void swap_buffers() = 0;
@@ -115,6 +118,8 @@ class iengine {
     virtual void set_game(igame* g) = 0;
 
     // virtual nlohmann::json read_data_from_json(std::string_view path) = 0;
+    // int weight = 540;
+    // int height = 270;
     int weight = 640;
     int height = 480;
 

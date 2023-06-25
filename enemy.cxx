@@ -1,11 +1,10 @@
 #include "enemy.hxx"
 
 enemy::enemy() {
-  // pos = {rand_spawn(-0.9f, 0.9f), rand_spawn(1.2f, 10.f), 1.f};
-  pos = {rand_spawn(-0.9f, 0.9f), 0.8f, 1.f};
+  pos = {rand_spawn(-0.9f, 0.9f), rand_spawn(1.2f, 10.f), 1.f};
+  // pos = {rand_spawn(-0.9f, 0.9f), 0.8f, 1.f};
 
   this->scale = 1.f;
-
   this->sprite = {pos[0] - 0.1f, pos[1] + 0.1f, pos[0] + 0.1f, pos[1] - 0.1f};
 }
 
@@ -16,9 +15,10 @@ void enemy::shoot(std::vector<bullet>& shoots) {
 }
 
 void enemy::update(std::vector<bullet>& shoots) {
-  sprite.aspect_matrix = {1.f, 0.f, 0.f, 0.f, 640.f / 480.f, 0.f, 0.f, 0.f, 1.f};
   sprite.move_matrix = {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, move_pos[1], 1.f};
   sprite.scale_matrix = {this->scale, 0.f, 0.f, 0.f, this->scale, 0.f, 0.f, 0.f, 1.f};
+  sprite.result_matrix = sprite.aspect_matrix * sprite.move_matrix * sprite.scale_matrix;
+
   cd += cd_step;
   this->pos[1] += speed_y;
   // std::cout << speed_x << std::endl;

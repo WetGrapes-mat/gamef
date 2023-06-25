@@ -5,6 +5,8 @@
 
 #define MUSIC
 
+// #define ASSPECT
+
 namespace grp {
 
 game::game(iengine& e) : engine(e) {
@@ -13,12 +15,24 @@ game::game(iengine& e) : engine(e) {
   enemy::set_config(configMap);
   bullet_p_speed = configMap["bullet_speed"];
   bullet_e_speed = configMap["bullet_speed"];
+  player_spead_x = configMap["player_spead_x"] * 1000;
+  player_spead_y = configMap["player_spead_y"] * 1000;
 
   hero = player();
   hero_texture = e.create_texture("images/pixel_ship_yellow.png");
   bulet_texture = e.create_texture("images/pixel_laser_yellow.png");
   map_texture = e.create_texture("images/background-black.png");
   enemy_green_texture = e.create_texture("images/pixel_ship_green_big.png");
+#ifdef __ANDROID__
+
+  gamepad_left_texture = e.create_texture("images/left.png");
+  gamepad_right_texture = e.create_texture("images/right.png");
+  gamepad_up_texture = e.create_texture("images/up.png");
+  gamepad_down_texture = e.create_texture("images/down.png");
+  shoot_button_texture = e.create_texture("images/shoot.png");
+  buttons = {left, right, up, down, shoot};
+#endif
+
 #ifdef MUSIC
   music = engine.create_sound("sounds/main.wav");
   kill_sound = engine.create_sound("sounds/E1.wav");
@@ -40,6 +54,9 @@ void game::render() {
   render_hero_bullets();
   render_enemy_bullets();
   render_enemys();
+#ifdef __ANDROID__
+  render_gamepad();
+#endif
 }
 
 void game::update() {
@@ -49,6 +66,40 @@ void game::update() {
 
   update_enemy_bullets();
   update_enemys();
+}
+//++++++++++++++++++gamepad++++++++++++++++++++
+
+void game::render_gamepad() {
+#ifdef ASSPECT
+  left.result_matrix = left.aspect_matrix;
+  grp::get_transformed_triangle(left);
+#endif
+
+  engine.render(left, gamepad_left_texture);
+#ifdef ASSPECT
+  right.result_matrix = left.aspect_matrix;
+  grp::get_transformed_triangle(right);
+#endif
+
+  engine.render(right, gamepad_right_texture);
+#ifdef ASSPECT
+  up.result_matrix = up.aspect_matrix;
+  grp::get_transformed_triangle(up);
+#endif
+
+  engine.render(up, gamepad_up_texture);
+#ifdef ASSPECT
+  down.result_matrix = down.aspect_matrix;
+  grp::get_transformed_triangle(down);
+#endif
+
+  engine.render(down, gamepad_down_texture);
+#ifdef ASSPECT
+  shoot.result_matrix = shoot.aspect_matrix;
+  grp::get_transformed_triangle(shoot);
+#endif
+
+  engine.render(shoot, shoot_button_texture);
 }
 
 //++++++++++++++++++hero++++++++++++++++++++
@@ -85,34 +136,39 @@ void game::render_hero_bullets() {
 
 void game::move_player(bool& flag) {
   grp::event event;
-  while (engine.input_event(event, grp::keyStates)) {
-    if (grp::keyStates[2] && -0.9f < hero.my_pos[0]) {
-      hero.my_pos[0] -= hero.speed_x;
-    }
-    // d
-    if (grp::keyStates[3] && hero.my_pos[0] < 0.9f) {
-      hero.my_pos[0] += hero.speed_x;
-    }
-    // w
-    if (grp::keyStates[0] && hero.my_pos[1] < 0.65f) {
-      hero.my_pos[1] += hero.speed_y;
-    }
-    // s
-    if (grp::keyStates[1] && -0.65f < hero.my_pos[1]) {
-      hero.my_pos[1] -= hero.speed_y;
-    }
-    // space
-    if (grp::keyStates[4] && hero.charge) {
-      hero.shoot();
-#ifdef MUSIC
-      shoot_sound->play(grp::isound::properties::once);
+
+#ifdef __ANDROID__
+  engine.input_event_android(buttons, grp::keyStates);
+#else
+  engine.input_event(event, grp::keyStates);
 #endif
-    }
-    // escape
-    if (grp::keyStates[5]) {
-      flag = false;
-      break;
-    }
+
+  // a
+  if (grp::keyStates[0] && -0.9f < hero.my_pos[0]) {
+    hero.my_pos[0] -= hero.speed_x;
+  }
+  // d
+  if (grp::keyStates[1] && hero.my_pos[0] < 0.9f) {
+    hero.my_pos[0] += hero.speed_x;
+  }
+  // w
+  if (grp::keyStates[2] && hero.my_pos[1] < 0.65f) {
+    hero.my_pos[1] += hero.speed_y;
+  }
+  // s
+  if (grp::keyStates[3] && -0.65f < hero.my_pos[1]) {
+    hero.my_pos[1] -= hero.speed_y;
+  }
+  // space
+  if (grp::keyStates[4]) {
+#ifdef MUSIC
+    shoot_sound->play(grp::isound::properties::once);
+#endif
+    hero.shoot();
+  }
+  // escape
+  if (grp::keyStates[5]) {
+    flag = false;
   }
 }
 
@@ -196,38 +252,47 @@ void game::read_config() {
 }
 
 void game::ImGui_menu() {
+  ImGuiIO& io = ImGui::GetIO();
+  io.FontGlobalScale = engine.height / 480.f;
+  ImVec2 button_size = {engine.height * 0.12f, engine.height * 0.12f};
+  float button_scale = engine.height / 480.f;
+  // ImGui::SetNextWindowCollapsed(true);
+
+  ImGui::SetNextWindowSize(ImVec2(engine.weight * 0.7f, engine.height * 0.5f));
+  if (ImGui::Begin("Develop", 0, 0 | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+    ImGui::SetWindowPos({engine.weight * 0.2f, 0});
+    ImGui::SliderFloat("player spead x", &player_spead_x, 0.0f, 10.f);
+    ImGui::SliderFloat("player spead y", &player_spead_y, 0.0f, 10.f);
+    ImGui::SliderFloat("player cd", &configMap["player_max_cd"], 0.0f, 20.0f);
+    ImGui::SliderFloat("player bullet spead", &bullet_p_speed, 0.0f, 3.f);
+    ImGui::SliderFloat("enemys speed", &configMap["enemys_speed_y"], 0.0f, 1.f);
+    ImGui::SliderFloat("enemys cd", &configMap["enemys_max_cd"], 0.0f, 30.f);
+    ImGui::SliderFloat("enemys bullet spead", &bullet_e_speed, 0.0f, 2.f);
+    if (ImGui::Button("apply", ImVec2(50 * button_scale, 30 * button_scale))) {
+      player::bullet_speed = bullet_p_speed / 100;
+      enemy::bullet_speed = bullet_e_speed / 100;
+      configMap["player_spead_x"] = player_spead_x / 1000;
+      configMap["player_spead_y"] = player_spead_y / 1000;
+      player::set_config(configMap);
+      enemy::set_config(configMap);
+    }
+  }
+  ImGui::End();
+
   constexpr ImGuiWindowFlags game_gui_flags =
     0 | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNav |
     ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar |
     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-  // clang-format on
+  ImGui::SetNextWindowSize(ImVec2(engine.weight * 0.2f, engine.height * 0.1f));
   if (ImGui::Begin("Score", 0, game_gui_flags)) {
     ImGui::SetWindowPos({0, 0});
     ImGui::SetWindowFontScale(1.5f);
     ImGui::Text("Score: %d", score);
+    ImGui::Text("Wave: %d", wave);
+
     ImGui::SetWindowFontScale(1.f);
     ImGui::End();
   }
-  char formattedString[64];
-  std::snprintf(formattedString, sizeof(formattedString), "%.5f", bullet_p_speed);
-
-  if (ImGui::Begin("Develop")) {
-    ImGui::SliderFloat("player spead x", &configMap["player_spead_x"], 0.0f, 10.f);
-    ImGui::SliderFloat("player spead y", &configMap["player_spead_y"], 0.0f, 10.f);
-    ImGui::SliderFloat("player cd", &configMap["player_max_cd"], 0.0f, 50.0f);
-    ImGui::SliderFloat("player bullet spead", &bullet_p_speed, 0.0f, 0.06f);
-    ImGui::SliderFloat("enemys speed", &configMap["enemys_speed_y"], 0.0f, 0.03f);
-    ImGui::SliderFloat("enemys cd", &configMap["enemys_max_cd"], 0.0f, 200.f);
-    ImGui::SliderFloat("enemys bullet spead", &bullet_e_speed, 0.0f, 0.06f);
-
-    if (ImGui::Button("apply")) {
-      player::set_config(configMap);
-      enemy::set_config(configMap);
-      player::bullet_speed = bullet_p_speed / 100;
-      enemy::bullet_speed = bullet_e_speed / 100;
-    }
-  }
-  ImGui::End();
 }
 
 } // namespace grp

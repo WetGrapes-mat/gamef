@@ -1,3 +1,4 @@
+#include "SDL3/SDL_events.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -11,6 +12,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -62,10 +64,10 @@ namespace grp {
 using namespace std;
 
 const vector<tuple<SDL_Keycode, std::string, event, event>> keys {
-  {     SDLK_w,      "w",      event::w_pressed,      event::w_released},
-  {     SDLK_s,      "s",      event::s_pressed,      event::s_released},
   {     SDLK_a,      "a",      event::a_pressed,      event::a_released},
   {     SDLK_d,      "d",      event::d_pressed,      event::d_released},
+  {     SDLK_w,      "w",      event::w_pressed,      event::w_released},
+  {     SDLK_s,      "s",      event::s_pressed,      event::s_released},
   { SDLK_SPACE,  "space",  event::space_pressed,  event::space_released},
   {SDLK_ESCAPE, "escape", event::escape_pressed, event::escape_released}
 };
@@ -121,6 +123,7 @@ static std::size_t get_sound_format_size(uint16_t format_value) {
 //+++++++++++++++++++++++++++++++INIT_HELP+++++++++++++++++++++++++++++++
 
 bool keyStates[6] = {false};
+bool is_touching = false;
 int countTrue(const bool arr[], int size) {
   int count = 0;
   for (int i = 0; i < size; i++) {
@@ -254,8 +257,10 @@ class engine final : public iengine {
         }
         weight = dispale_mode->w;
         height = dispale_mode->h;
+        std::cout << weight << height << std::endl;
       }
 #endif
+
       sprite::aspect_matrix = {1.f, 0.f, 0.f, 0.f, weight / height, 0.f, 0.f, 0.f, 1.f};
 
       window = SDL_CreateWindow("title", weight, height, ::SDL_WINDOW_OPENGL);
@@ -266,6 +271,7 @@ class engine final : public iengine {
         return serr.str();
       }
       SDL_GetWindowSizeInPixels(window, &weight, &height);
+      std::cout << weight << height << std::endl;
 
 #ifdef __APPLE__
       int gl_major_ver = 4;
@@ -278,7 +284,6 @@ class engine final : public iengine {
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_ES;
 
 #endif
-
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, gl_context_profile);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl_major_ver);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, gl_minor_ver);
@@ -360,9 +365,13 @@ class engine final : public iengine {
         }
       }
       std::cout << std::flush;
-
-      audio_device = SDL_OpenAudioDevice(
-        default_audio_device_name, 0, &audio_device_spec, nullptr, SDL_AUDIO_ALLOW_ANY_CHANGE);
+      SDL_AudioSpec returned_audio_device_spec;
+      audio_device = SDL_OpenAudioDevice(default_audio_device_name,
+                                         0,
+                                         &audio_device_spec,
+                                         &returned_audio_device_spec,
+                                         SDL_AUDIO_ALLOW_ANY_CHANGE);
+      audio_device_spec = returned_audio_device_spec;
 
       if (audio_device == 0) {
         std::cerr << "failed open audio device: " << SDL_GetError();
@@ -389,18 +398,44 @@ class engine final : public iengine {
 #else
       ImGui_ImplOpenGL3_Init();
 #endif
+      ImGui::SetNextWindowCollapsed(true);
 
       return "";
+    }
+    bool input_event_android(std::vector<grp::sprite>& buttons, bool* state_key) override {
+      SDL_Event event;
+      while (SDL_PollEvent(&event)) {
+        ImGui_ImplSDL3_ProcessEvent(&event);
+        float x_finger = 2 * event.tfinger.x - 1;
+        float y_finger = -(2 * event.tfinger.y - 1);
+
+        if (event.type == SDL_EVENT_QUIT) {
+          state_key[5] = true;
+          return true;
+        } else if (event.type == SDL_EVENT_FINGER_DOWN) {
+          for (int i = 0; i < keys.size(); i++) {
+            if (buttons[i].collision(x_finger, y_finger)) {
+              state_key[i] = true;
+            }
+          }
+          return true;
+        } else if (event.type == SDL_EVENT_FINGER_UP) {
+          for (int i = 0; i < keys.size(); i++) {
+            if (buttons[i].collision(x_finger, y_finger)) {
+              state_key[i] = false;
+            }
+          }
+          return true;
+        }
+      }
+      return false;
     }
 
     bool input_event(event& e, bool* state_key) override {
       SDL_Event event;
-      // std::cout << state_key[0] << state_key[1] << state_key[2] << state_key[3] << state_key[4]
-      //           << state_key[5] << std::endl;
       while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL3_ProcessEvent(&event);
-        // if (countTrue(keyStates, 6) != 0)
-        //   event.type = SDL_EVENT_KEY_DOWN;
+
         if (event.type == SDL_EVENT_QUIT) {
           state_key[5] = true;
           e = event::turn_off;
@@ -410,19 +445,18 @@ class engine final : public iengine {
             if (std::get<0>(keys[i]) == event.key.keysym.sym) {
               state_key[i] = true;
               e = std::get<2>(keys[i]);
-              // std::cout << e << std::endl;
-              return true;
             }
           }
+          return true;
 
         } else if (event.type == SDL_EVENT_KEY_UP) {
           for (int i = 0; i < keys.size(); i++) {
             if (std::get<0>(keys[i]) == event.key.keysym.sym) {
               state_key[i] = false;
               e = std::get<3>(keys[i]);
-              return true;
             }
           }
+          return true;
         }
       }
       return false;
@@ -527,21 +561,6 @@ class engine final : public iengine {
 
     //+++++++++++++++++++++++++++++++IMGUI++++++++++++++++++++++++++++++
 
-    void set_cursor_visible(bool visible) override {
-      int failure;
-      if (visible) {
-        failure = SDL_ShowCursor();
-        ImGui::GetIO().ConfigFlags ^= ImGuiConfigFlags_NoMouseCursorChange;
-      } else {
-        failure = SDL_HideCursor();
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-      }
-
-      if (failure) {
-        std::cerr << "Error to set cursor visibility. Error: " << SDL_GetError() << std::endl;
-      }
-    };
-
     void set_game(igame* g) override {
       game = g;
     };
@@ -550,8 +569,6 @@ class engine final : public iengine {
       ImGui_ImplSDL3_NewFrame();
       ImGui::NewFrame();
       game->ImGui_menu();
-
-      // ImGui::ShowDemoWindow();
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     };
@@ -664,8 +681,6 @@ void opengl_shader_program::validate_program() const {
 
 std::string opengl_shader_program::get_shader_code_from_file(const std::string_view path) const {
   std::string shader_code {};
-  std::cout << path.data() << std::endl;
-
   SDL_RWops* io = SDL_RWFromFile(path.data(), "rb");
 
   if (!io) {
@@ -722,7 +737,7 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
 }
 
 void get_transformed_triangle(sprite& sprite) {
-  sprite.result_matrix = sprite.aspect_matrix * sprite.move_matrix * sprite.scale_matrix;
+  // sprite.result_matrix = sprite.aspect_matrix * sprite.move_matrix * sprite.scale_matrix;
   sprite.triangle_low_transformed =
     get_transformed_triangle(sprite.triangle_low, sprite.result_matrix);
   sprite.triangle_high_transformed =
@@ -877,15 +892,15 @@ void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) 
 sprite::sprite(float x1, float y1, float x2, float y2){
 this->AABB ={x1,y1,x2,y2};
 this->triangle_low = {
-      {x1, y2, -1.f, 0.f, 0.f, 0.f, 0.f, 1.f,
-       x2 , y2, -1.f, 0.f,0.f, 0.f, 1.f, 1.f,
-        x1, y1, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f},
+      {x1, y2, -1.f, 1.f, 1.f, 1.f, 0.f, 1.f,
+       x2 , y2, -1.f, 1.f,1.f, 1.f, 1.f, 1.f,
+        x1, y1, -1.f, 1.f, 1.f, 1.f, 0.f, 0.f},
     };
 
     this->triangle_high =  {
-      {x1, y1, -1.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-       x2, y1, -1.f, 0.f,0.f, 0.f, 1.f, 0.f, 
-       x2 , y2, -1.f, 0.f, 0.f, 0.f, 1.f, 1.f},
+      {x1, y1, -1.f, 1.f, 1.f, 1.f, 0.f, 0.f,
+       x2, y1, -1.f, 1.f,1.f, 1.f, 1.f, 0.f, 
+       x2 , y2, -1.f, 1.f, 1.f, 1.f, 1.f, 1.f},
     };
     this->triangle_low_transformed = this->triangle_low;
         this->triangle_high_transformed = this->triangle_high;
@@ -902,6 +917,20 @@ bool sprite::collision(std::array<float, 4> collision_entity) {
   }
   return true;
 };
+
+bool sprite::collision(float x, float y) {
+  // std::cout << this->AABB[0] << this->AABB[1] << this->AABB[2] << this->AABB[3] << std::endl;
+  // std::cout << x << " " << y << std::endl;
+
+  if (this->AABB[2] < x || this->AABB[0] > x) {
+    return false;
+  }
+  if (this->AABB[1] < y || this->AABB[3] > y) {
+    return false;
+  }
+  return true;
+};
+
 class android_redirected_buf : public std::streambuf {
   public:
     android_redirected_buf() = default;
@@ -961,7 +990,6 @@ nlohmann::json read_data_from_json(std::string_view path) {
 }
 
 } // end namespace grp
-
 #ifdef __ANDROID__
 
 int main(int /*argc*/, char* /*argv*/[]) {
@@ -982,10 +1010,27 @@ int main(int /*argc*/, char* /*argv*/[]) {
   grp::game* game = new grp::game(*engine);
   engine->set_game(game);
 
+  using clock_timer = std::chrono::high_resolution_clock;
+  using nano_sec = std::chrono::nanoseconds;
+  using milli_sec = std::chrono::milliseconds;
+  using time_point = std::chrono::time_point<clock_timer, nano_sec>;
+  clock_timer timer;
+
+  time_point start = timer.now();
+
   bool continue_loop = true;
   while (continue_loop) {
+    time_point end_last_frame = timer.now();
+
     game->move_player(continue_loop);
 
+    milli_sec frame_delta = std::chrono::duration_cast<milli_sec>(end_last_frame - start);
+
+    if (frame_delta.count() < 24) // 1000 % 60 = 16.666 FPS
+    {
+      std::this_thread::yield();  // too fast, give other apps CPU time
+      continue;                   // wait till more time
+    }
     game->update();
 
     game->render();
@@ -993,6 +1038,7 @@ int main(int /*argc*/, char* /*argv*/[]) {
     engine->draw_imgui();
 
     engine->swap_buffers();
+    start = end_last_frame;
   }
 
   engine->uninitialize();
