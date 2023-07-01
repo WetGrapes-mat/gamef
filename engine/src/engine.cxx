@@ -11,6 +11,7 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <tuple>
@@ -293,19 +294,21 @@ class engine final : public iengine {
       assert(gl_context != nullptr);
 
       std::clog << "OpenGl " << gl_major_ver << '.' << gl_minor_ver << '\n';
-#ifdef __APPLE__
+#ifndef __ANDROID__
 
       auto load_gl_pointer = [](const char* function_name) {
         SDL_FunctionPointer function_ptr = SDL_GL_GetProcAddress(function_name);
         return reinterpret_cast<void*>(function_ptr);
       };
+#ifdef __APPLE__
       if (gladLoadGLLoader(load_gl_pointer) == 0) {
         std::clog << "error: failed to initialize glad" << std::endl;
       }
 #else
-// if (gladLoadGLES2Loader(load_gl_pointer) == 0) {
-//   std::clog << "error: failed to initialize glad" << std::endl;
-// }
+      if (gladLoadGLES2Loader(load_gl_pointer) == 0) {
+        std::clog << "error: failed to initialize glad" << std::endl;
+      }
+#endif
 #endif
 
       glViewport(0, 0, weight, height);
@@ -321,16 +324,27 @@ class engine final : public iengine {
       CHECK_OPENGL()
       glBindVertexArray(vao);
       CHECK_OPENGL()
+#ifdef __APPLE__
+      string triangle_vertex = "shader/mac/triangle_vertex.shader";
+      string triangle_fragment = "shader/mac/triangle_fragment.shader";
+      string texture_vertex = "shader/mac/texture_vertex.shader";
+      string texture_fragment = "shader/mac/texture_fragment.shader";
+#else
+      string triangle_vertex = "shader/triangle_vertex.shader";
+      string triangle_fragment = "shader/triangle_fragment.shader";
+      string texture_vertex = "shader/texture_vertex.shader";
+      string texture_fragment = "shader/texture_fragment.shader";
+#endif
 
-      triangle_program.load_shader(GL_VERTEX_SHADER, "shader/triangle_vertex.shader");
+      triangle_program.load_shader(GL_VERTEX_SHADER, triangle_vertex);
 
-      triangle_program.load_shader(GL_FRAGMENT_SHADER, "shader/triangle_fragment.shader");
+      triangle_program.load_shader(GL_FRAGMENT_SHADER, triangle_fragment);
 
       triangle_program.prepare_program();
 
-      texture_program.load_shader(GL_VERTEX_SHADER, "shader/texture_vertex.shader");
+      texture_program.load_shader(GL_VERTEX_SHADER, texture_vertex);
 
-      texture_program.load_shader(GL_FRAGMENT_SHADER, "shader/texture_fragment.shader");
+      texture_program.load_shader(GL_FRAGMENT_SHADER, texture_fragment);
 
       texture_program.prepare_program();
 
