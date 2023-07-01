@@ -5,5 +5,8 @@
 /build
 /temp
 .cache
-android-project/.gradle
-android-project/.idea
+/android-project/app/build
+/android-project/app/.cxx
+/android-project/local.properties
+/android-project/.idea
+/android-project/.gradle/
