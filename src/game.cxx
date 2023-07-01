@@ -23,8 +23,8 @@ game::game(iengine& e) : engine(e) {
   bulet_texture = e.create_texture("images/pixel_laser_yellow.png");
   map_texture = e.create_texture("images/background-black.png");
   enemy_green_texture = e.create_texture("images/pixel_ship_green_big.png");
-#ifdef __ANDROID__
 
+#ifdef __ANDROID__
   gamepad_left_texture = e.create_texture("images/left.png");
   gamepad_right_texture = e.create_texture("images/right.png");
   gamepad_up_texture = e.create_texture("images/up.png");
@@ -254,10 +254,8 @@ void game::read_config() {
 void game::ImGui_menu() {
   ImGuiIO& io = ImGui::GetIO();
   io.FontGlobalScale = engine.height / 480.f;
-  ImVec2 button_size = {engine.height * 0.12f, engine.height * 0.12f};
   float button_scale = engine.height / 480.f;
   // ImGui::SetNextWindowCollapsed(true);
-
   ImGui::SetNextWindowSize(ImVec2(engine.weight * 0.7f, engine.height * 0.5f));
   if (ImGui::Begin("Develop", 0, 0 | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
     ImGui::SetWindowPos({engine.weight * 0.2f, 0});
@@ -269,12 +267,12 @@ void game::ImGui_menu() {
     ImGui::SliderFloat("enemys cd", &configMap["enemys_max_cd"], 0.0f, 30.f);
     ImGui::SliderFloat("enemys bullet spead", &bullet_e_speed, 0.0f, 2.f);
     if (ImGui::Button("apply", ImVec2(50 * button_scale, 30 * button_scale))) {
-      player::bullet_speed = bullet_p_speed / 100;
-      enemy::bullet_speed = bullet_e_speed / 100;
       configMap["player_spead_x"] = player_spead_x / 1000;
       configMap["player_spead_y"] = player_spead_y / 1000;
       player::set_config(configMap);
       enemy::set_config(configMap);
+      player::bullet_speed = bullet_p_speed / 100;
+      enemy::bullet_speed = bullet_e_speed / 100;
     }
   }
   ImGui::End();

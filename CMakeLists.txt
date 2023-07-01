@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(opengl-minimal CXX C)
+project(space_game CXX C)
 
 if(SDL3_SRC_DIR)
   add_subdirectory(
@@ -9,11 +9,16 @@ if(SDL3_SRC_DIR)
     ${CMAKE_CURRENT_BINARY_DIR}/SDL_${ANDROID_ABI})
 endif()
 
-file(COPY ${CMAKE_SOURCE_DIR}/shader DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY ${CMAKE_SOURCE_DIR}/sounds DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY ${CMAKE_SOURCE_DIR}/images DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY "wave_list.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY "config_game.json" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY ${CMAKE_SOURCE_DIR}/assets/sounds
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/assets/images
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/shader DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(COPY ${CMAKE_SOURCE_DIR}/assets/wave_list.json
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/assets/config_game.json
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -21,74 +26,19 @@ if(WIN32)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-  # find_library(SDL3_LIB NAMES SDL3)
-else()
-  find_package(SDL3 REQUIRED)
-  find_package(OpenGL REQUIRED)
-  find_package(glm REQUIRED)
-endif()
+add_subdirectory(engine)
 
-file(GLOB IMGUI_SRC ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.cpp)
-file(GLOB IMGUI_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/imgui-src/*.h)
+set(GAME_SRC src/game.cxx src/player.cxx src/bullet.cxx src/enemy.cxx
+             src/main.cxx)
+set(GAME_INCLUDE include/player.hxx include/bullet.hxx include/enemy.hxx
+                 include/ientity.hxx)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-  add_library(
-    engine SHARED
-    game.cxx
-    game.hxx
-    player.cxx
-    player.hxx
-    bullet.cxx
-    bullet.hxx
-    enemy.hxx
-    enemy.cxx
-    nlohmann/json.hpp
-    engine.cxx
-    engine.hxx
-    glad/glad.c
-    glad/glad.h
-    glad/KHR/khrplatform.h
-    ${IMGUI_SRC}
-    ${IMGUI_INCLUDE})
-  target_compile_definitions(engine PUBLIC IMGUI_IMPL_OPENGL_ES3)
-
+  add_library(game SHARED ${GAME_SRC} ${GAME_INCLUDE})
 else()
-  add_library(
-    engine SHARED
-    engine.cxx
-    engine.hxx
-    glad/glad.c
-    glad/glad.h
-    glad/KHR/khrplatform.h
-    ${IMGUI_SRC}
-    ${IMGUI_INCLUDE})
+  add_executable(game ${GAME_SRC} ${GAME_INCLUDE})
 endif()
 
-target_compile_features(engine PUBLIC cxx_std_20)
-target_include_directories(engine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-  target_link_libraries(engine PRIVATE SDL3::SDL3-shared android log EGL GLESv3)
-else()
-  target_link_libraries(engine PRIVATE SDL3::SDL3-shared OpenGL::GL glm::glm)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-
-else()
-  add_executable(
-    game
-    main.cxx
-    game.cxx
-    game.hxx
-    player.cxx
-    player.hxx
-    bullet.cxx
-    bullet.hxx
-    enemy.hxx
-    enemy.cxx
-    nlohmann/json.hpp)
-  target_compile_features(game PUBLIC cxx_std_20)
-  target_link_libraries(game PRIVATE engine)
-endif()
+target_compile_features(game PUBLIC cxx_std_20)
+target_link_libraries(game PRIVATE engine)
+target_include_directories(game PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)

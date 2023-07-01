@@ -1,4 +1,4 @@
-#include "SDL3/SDL_events.h"
+#include <SDL3/SDL_events.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -22,7 +22,6 @@
 #include <android/log.h>
 #define GL_GLES_PROTOTYPES 1
 #define glActiveTexture_ glActiveTexture
-#include "game.hxx"
 #else
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_keycode.h>
@@ -276,13 +275,14 @@ class engine final : public iengine {
 #ifdef __APPLE__
       int gl_major_ver = 4;
       int gl_minor_ver = 1;
-      int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
-
 #else
       int gl_major_ver = 3;
       int gl_minor_ver = 0;
+#endif
+#ifdef __ANDROID__
       int gl_context_profile = SDL_GL_CONTEXT_PROFILE_ES;
-
+#else
+      int gl_context_profile = SDL_GL_CONTEXT_PROFILE_CORE;
 #endif
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, gl_context_profile);
       SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, gl_major_ver);
@@ -398,7 +398,8 @@ class engine final : public iengine {
 #else
       ImGui_ImplOpenGL3_Init();
 #endif
-      ImGui::SetNextWindowCollapsed(true);
+
+      // ImGui::SetNextWindowCollapsed(true);
 
       return "";
     }
@@ -990,62 +991,62 @@ nlohmann::json read_data_from_json(std::string_view path) {
 }
 
 } // end namespace grp
-#ifdef __ANDROID__
+// #ifdef __ANDROID__
 
-int main(int /*argc*/, char* /*argv*/[]) {
-  auto cout_buf = std::cout.rdbuf();
-  auto cerr_buf = std::cerr.rdbuf();
-  auto clog_buf = std::clog.rdbuf();
+// int main(int /*argc*/, char* /*argv*/[]) {
+//   auto cout_buf = std::cout.rdbuf();
+//   auto cerr_buf = std::cerr.rdbuf();
+//   auto clog_buf = std::clog.rdbuf();
 
-  grp::android_redirected_buf logcat;
+//   grp::android_redirected_buf logcat;
 
-  std::cout.rdbuf(&logcat);
-  std::cerr.rdbuf(&logcat);
-  std::clog.rdbuf(&logcat);
+//   std::cout.rdbuf(&logcat);
+//   std::cerr.rdbuf(&logcat);
+//   std::clog.rdbuf(&logcat);
 
-  using namespace std;
+//   using namespace std;
 
-  grp::iengine* engine = grp::create_engine();
-  engine->initialize("");
-  grp::game* game = new grp::game(*engine);
-  engine->set_game(game);
+//   grp::iengine* engine = grp::create_engine();
+//   engine->initialize("");
+//   grp::game* game = new grp::game(*engine);
+//   engine->set_game(game);
 
-  using clock_timer = std::chrono::high_resolution_clock;
-  using nano_sec = std::chrono::nanoseconds;
-  using milli_sec = std::chrono::milliseconds;
-  using time_point = std::chrono::time_point<clock_timer, nano_sec>;
-  clock_timer timer;
+//   using clock_timer = std::chrono::high_resolution_clock;
+//   using nano_sec = std::chrono::nanoseconds;
+//   using milli_sec = std::chrono::milliseconds;
+//   using time_point = std::chrono::time_point<clock_timer, nano_sec>;
+//   clock_timer timer;
 
-  time_point start = timer.now();
+//   time_point start = timer.now();
 
-  bool continue_loop = true;
-  while (continue_loop) {
-    time_point end_last_frame = timer.now();
+//   bool continue_loop = true;
+//   while (continue_loop) {
+//     time_point end_last_frame = timer.now();
 
-    game->move_player(continue_loop);
+//     game->move_player(continue_loop);
 
-    milli_sec frame_delta = std::chrono::duration_cast<milli_sec>(end_last_frame - start);
+//     milli_sec frame_delta = std::chrono::duration_cast<milli_sec>(end_last_frame - start);
 
-    if (frame_delta.count() < 24) // 1000 % 60 = 16.666 FPS
-    {
-      std::this_thread::yield();  // too fast, give other apps CPU time
-      continue;                   // wait till more time
-    }
-    game->update();
+//     if (frame_delta.count() < 24) // 1000 % 60 = 16.666 FPS
+//     {
+//       std::this_thread::yield();  // too fast, give other apps CPU time
+//       continue;                   // wait till more time
+//     }
+//     game->update();
 
-    game->render();
+//     game->render();
 
-    engine->draw_imgui();
+//     engine->draw_imgui();
 
-    engine->swap_buffers();
-    start = end_last_frame;
-  }
+//     engine->swap_buffers();
+//     start = end_last_frame;
+//   }
 
-  engine->uninitialize();
-  std::cout.rdbuf(cout_buf);
-  std::cerr.rdbuf(cerr_buf);
-  std::clog.rdbuf(clog_buf);
+//   engine->uninitialize();
+//   std::cout.rdbuf(cout_buf);
+//   std::cerr.rdbuf(cerr_buf);
+//   std::clog.rdbuf(clog_buf);
 
-  return EXIT_SUCCESS;
-}
-#endif
+//   return EXIT_SUCCESS;
+// }
+// #endif

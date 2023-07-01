@@ -2,20 +2,20 @@
 #ifdef __ANDROID__
 #include <GLES3/gl3.h>
 #else
-#include "glad/glad.h"
+#include "glad.h"
 #endif
 
-#include "glm/glm.hpp"
 #include <array>
 #include <iosfwd>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "imgui-src/imgui.h"
-#include "imgui-src/imgui_impl_opengl3.h"
-#include "imgui-src/imgui_impl_sdl3.h"
-#include "nlohmann/json.hpp"
+#include "glm.hpp"
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
+#include "json.hpp"
 namespace grp {
 /// dendy gamepad emulation events
 enum class event {
@@ -117,9 +117,6 @@ class iengine {
     virtual void uninitialize() = 0;
     virtual void set_game(igame* g) = 0;
 
-    // virtual nlohmann::json read_data_from_json(std::string_view path) = 0;
-    // int weight = 540;
-    // int height = 270;
     int weight = 640;
     int height = 480;
 

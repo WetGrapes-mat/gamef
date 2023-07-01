@@ -4,7 +4,11 @@
 
 #include "game.hxx"
 
-int main(int /*argc*/, char* /*argv*/[]) {
+#ifdef __ANDROID__
+#define main grp_Game
+#endif
+
+extern "C" int main(int /*argc*/, char* /*argv*/[]) {
   using namespace std;
 
   grp::iengine* engine = grp::create_engine();
