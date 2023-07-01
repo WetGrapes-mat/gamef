@@ -1,0 +1,144 @@
+{
+    "1": {
+      "red_s": 1,
+      "green_s": 1,
+      "blue_s": 1
+    },
+    "2": {
+      "red_s": 2,
+      "green_s": 2,
+      "blue_s": 2
+    },
+    "3": {
+      "red_s": 3,
+      "green_s": 2,
+      "blue_s": 2
+    },
+    "4": {
+      "red_s": 3,
+      "green_s": 3,
+      "blue_s": 3
+    },
+    "5": {
+      "boss_s": 1
+    },
+    "6": {
+      "red_s": 3,
+      "green_s": 3,
+      "blue_s": 3,
+      "red_b": 1,
+      "green_b": 1,
+      "blue_m": 1
+    },
+    "7": {
+      "red_s": 3,
+      "green_s": 3,
+      "blue_s": 3,
+      "red_b": 2,
+      "green_b": 2,
+      "blue_m": 2
+    },
+    "8": {
+      "red_s": 3,
+      "green_s": 3,
+      "blue_s": 3,
+      "red_b": 3,
+      "green_b": 3,
+      "blue_m": 3
+    },
+    "9": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 3,
+      "green_b": 3,
+      "blue_m": 3
+    },
+    "10": {
+      "boss_m": 1
+    },
+    "11": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 3,
+      "green_b": 3,
+      "blue_m": 3,
+      "blue_b": 1
+    },
+    "12": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 4,
+      "green_b": 3,
+      "blue_m": 3,
+      "blue_b": 2
+    },
+    "13": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 4,
+      "green_b": 4,
+      "blue_m": 3,
+      "blue_b": 3
+    },
+    "14": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 4,
+      "green_b": 4,
+      "blue_m": 4,
+      "blue_b": 4
+    },
+    "15": {
+      "boss_l": 1
+    },
+    "16": {
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 5,
+      "green_b": 5,
+      "blue_m": 5,
+      "blue_b": 5
+    },
+    "17": {
+      "red_s": 6,
+      "green_s": 6,
+      "blue_s": 6,
+      "red_b": 6,
+      "green_b": 6,
+      "blue_m": 6,
+      "blue_b": 6
+    },
+    "18": {
+      "red_s": 7,
+      "green_s": 7,
+      "blue_s": 7,
+      "red_b": 7,
+      "green_b": 7,
+      "blue_m": 7,
+      "blue_b": 7
+    },
+    "19": {
+      "red_s": 8,
+      "green_s": 8,
+      "blue_s": 8,
+      "red_b": 8,
+      "green_b": 8,
+      "blue_m": 8,
+      "blue_b": 8
+    },
+    "20": {
+      "red_s": 8,
+      "green_s": 8,
+      "blue_s": 8,
+      "red_b": 8,
+      "green_b": 8,
+      "blue_m": 8,
+      "blue_b": 8
+    }
+  }

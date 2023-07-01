@@ -1,0 +1,12 @@
+{   "player_max_cd" : 5.0,
+    "enemys_max_cd": 15.0,
+    "player_cd_step" : 0.3,
+    "enemys_cd_step" : 0.1,
+
+    "player_spead_x": 0.001,
+    "player_spead_y" : 0.001,
+    "enemys_speed_x" : 0.3,
+    "enemys_speed_y" : 0.6,
+    "bullet_speed" : 1.0
+
+}
