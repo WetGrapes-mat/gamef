@@ -36,7 +36,8 @@ extern "C" int main(int /*argc*/, char* /*argv*/[]) {
       std::this_thread::yield();  // too fast, give other apps CPU time
       continue;                   // wait till more time
     }
-    game->update();
+    if (game->life)
+      game->update();
 
     game->render();
 

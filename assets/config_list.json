@@ -1,0 +1,58 @@
+{
+  "bullet_speed":{"bullet_speed": 1.0}, 
+    "player":{
+      "player_max_cd" : 5.0,
+      "player_cd_step" : 0.3,
+      "player_spead_x": 0.001,
+      "player_spead_y" : 0.001
+    },
+    "red_s": {
+      "laser_img": 2.0,
+      "hp": 1.0,
+      "CD": 10.0, 
+      "velocity": 0.003,
+      "scale": 0.6
+    },
+    "green_s": {
+      "laser_img": 3.0,
+      "hp": 1.0,
+      "CD": 10.0,
+      "velocity": 0.003,
+      "scale": 0.6
+    },
+    "blue_s": {
+      "laser_img": 1.0,
+      "hp": 1.0,
+      "CD": 15.0,
+      "velocity": 0.005,
+      "scale": 0.5
+    },
+    "red_b": {
+      "laser_img": 2.0,
+      "hp": 2.0,
+      "CD": 10.0,
+      "velocity": 0.002,
+      "scale": 1.0
+    },
+    "green_b": {
+      "laser_img": 3.0,
+      "hp": 2.0,
+      "CD": 10.0,
+      "velocity": 0.002,
+      "scale": 1.0
+    },
+    "blue_m": {
+      "laser_img": 1.0,
+      "hp": 1.0,
+      "CD": 10.0,
+      "velocity": 0.003,
+      "scale": 0.7
+    },
+    "blue_b": {
+      "laser_img": 1.0,
+      "hp": 1.0,
+      "CD": 15.0,
+      "velocity": 0.002,
+      "scale": 1.0
+    }
+}

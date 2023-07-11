@@ -20,7 +20,12 @@
       "blue_s": 3
     },
     "5": {
-      "boss_s": 1
+      "red_s": 2,
+      "green_s": 2,
+      "blue_s": 2,
+      "red_b": 1,
+      "green_b": 1,
+      "blue_m": 1
     },
     "6": {
       "red_s": 3,
@@ -55,7 +60,13 @@
       "blue_m": 3
     },
     "10": {
-      "boss_m": 1
+      "red_s": 5,
+      "green_s": 5,
+      "blue_s": 5,
+      "red_b": 3,
+      "green_b": 2,
+      "blue_m": 2,
+      "blue_b": 1
     },
     "11": {
       "red_s": 5,
@@ -94,7 +105,13 @@
       "blue_b": 4
     },
     "15": {
-      "boss_l": 1
+      "red_s": 6,
+      "green_s": 6,
+      "blue_s": 6,
+      "red_b": 4,
+      "green_b": 4,
+      "blue_m": 4,
+      "blue_b": 4
     },
     "16": {
       "red_s": 5,

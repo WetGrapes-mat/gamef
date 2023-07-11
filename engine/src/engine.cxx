@@ -127,7 +127,7 @@ bool is_touching = false;
 int countTrue(const bool arr[], int size) {
   int count = 0;
   for (int i = 0; i < size; i++) {
-    if (arr[i]) { // Если значение равно true
+    if (arr[i]) {
       count++;
     }
   }
@@ -368,8 +368,6 @@ class engine final : public iengine {
       std::cout << std::flush;
 
       const char* default_audio_device_name = nullptr;
-
-      // SDL_FALSE - mean get only OUTPUT audio devices
       const int num_audio_devices = SDL_GetNumAudioDevices(SDL_FALSE);
       if (num_audio_devices > 0) {
         default_audio_device_name = SDL_GetAudioDeviceName(num_audio_devices - 1, SDL_FALSE);
@@ -506,9 +504,9 @@ class engine final : public iengine {
       glDisableVertexAttribArray(1);
       CHECK_OPENGL()
     }
-    void render(const sprite& sprit, texture* const texture) override {
-      render(sprit.triangle_low_transformed, texture);
-      render(sprit.triangle_high_transformed, texture);
+    void render(const sprite& sprit) override {
+      render(sprit.triangle_low_transformed, sprit.mytexture);
+      render(sprit.triangle_high_transformed, sprit.mytexture);
     }
 
     void render(const triangle& triangle, texture* const texture) override {
@@ -570,7 +568,6 @@ class engine final : public iengine {
 
     isound* create_sound(std::string_view path) final;
     void destroy_sound(isound* sound) final {
-      // TODO FIXME first remove from sounds collection
       delete sound;
     }
 
@@ -584,6 +581,8 @@ class engine final : public iengine {
       ImGui_ImplSDL3_NewFrame();
       ImGui::NewFrame();
       game->ImGui_menu();
+      game->ImGui_hp_bar();
+
       ImGui::Render();
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     };
@@ -752,7 +751,6 @@ grp::triangle get_transformed_triangle(const grp::triangle& t,
 }
 
 void get_transformed_triangle(sprite& sprite) {
-  // sprite.result_matrix = sprite.aspect_matrix * sprite.move_matrix * sprite.scale_matrix;
   sprite.triangle_low_transformed =
     get_transformed_triangle(sprite.triangle_low, sprite.result_matrix);
   sprite.triangle_high_transformed =
@@ -771,8 +769,6 @@ class sound final : public isound {
 
     void play(const properties prop) final {
       std::lock_guard<std::mutex> lock(engine::audio_mutex);
-      // here we can change properties
-      // of sound and dont collade with multithreaded playing
       current_index = 0;
       is_playing = true;
       is_looped = (prop == properties::looped);
@@ -793,8 +789,6 @@ sound::sound(std::string_view path, SDL_AudioDeviceID device_, SDL_AudioSpec dev
   if (file == nullptr) {
     throw std::runtime_error(std::string("can't open audio file: ") + path.data());
   }
-
-  // freq, format, channels, and samples - used by SDL_LoadWAV_RW
   SDL_AudioSpec file_audio_spec;
 
   if (nullptr == SDL_LoadWAV_RW(file, 1, &file_audio_spec, &buffer, &length)) {
@@ -841,7 +835,6 @@ sound::sound(std::string_view path, SDL_AudioDeviceID device_, SDL_AudioSpec dev
     buffer = output_bytes;
     length = static_cast<uint32_t>(output_length);
   } else {
-    // no need to convert buffer, use as is
   }
 }
 
@@ -856,7 +849,6 @@ sound::~sound() {
 isound* engine::create_sound(std::string_view path) {
   sound* s = new sound(path, audio_device, audio_device_spec);
   {
-    // push_backsound_buffer_impl
     std::lock_guard<std::mutex> lock(audio_mutex);
     sounds.push_back(s);
   }
@@ -867,7 +859,6 @@ std::mutex engine::audio_mutex;
 
 void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) {
   std::lock_guard<std::mutex> lock(audio_mutex);
-  // no sound default
   std::fill_n(stream, stream_size, '\0');
 
   engine* e = static_cast<engine*>(engine_ptr);
@@ -878,7 +869,6 @@ void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) 
       uint8_t* current_buff = &snd->buffer[snd->current_index];
 
       if (rest <= static_cast<uint32_t>(stream_size)) {
-        // copy rest to buffer
         SDL_MixAudioFormat(
           stream, current_buff, e->audio_device_spec.format, rest, SDL_MIX_MAXVOLUME);
         snd->current_index += rest;
@@ -893,7 +883,6 @@ void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) 
 
       if (snd->current_index == snd->length) {
         if (snd->is_looped) {
-          // start from begining
           snd->current_index = 0;
         } else {
           snd->is_playing = false;
@@ -904,7 +893,7 @@ void engine::audio_callback(void* engine_ptr, uint8_t* stream, int stream_size) 
 }
 //+++++++++++++++++++++++++++++++SPRITE++++++++++++++++++++++++++++++
 // clang-format off
-sprite::sprite(float x1, float y1, float x2, float y2){
+sprite::sprite(float x1, float y1, float x2, float y2, texture* textr){
 this->AABB ={x1,y1,x2,y2};
 this->triangle_low = {
       {x1, y2, -1.f, 1.f, 1.f, 1.f, 0.f, 1.f,
@@ -919,6 +908,7 @@ this->triangle_low = {
     };
     this->triangle_low_transformed = this->triangle_low;
         this->triangle_high_transformed = this->triangle_high;
+    this->mytexture = textr;
 
 
 }
@@ -934,9 +924,6 @@ bool sprite::collision(std::array<float, 4> collision_entity) {
 };
 
 bool sprite::collision(float x, float y) {
-  // std::cout << this->AABB[0] << this->AABB[1] << this->AABB[2] << this->AABB[3] << std::endl;
-  // std::cout << x << " " << y << std::endl;
-
   if (this->AABB[2] < x || this->AABB[0] > x) {
     return false;
   }
@@ -951,8 +938,6 @@ class android_redirected_buf : public std::streambuf {
     android_redirected_buf() = default;
 
   private:
-    // This android_redirected_buf buffer has no buffer. So every character
-    // "overflows" and can be put directly into the teed buffers.
     int overflow(int c) override {
       if (c == EOF) {
         return !EOF;
@@ -1005,62 +990,3 @@ nlohmann::json read_data_from_json(std::string_view path) {
 }
 
 } // end namespace grp
-// #ifdef __ANDROID__
-
-// int main(int /*argc*/, char* /*argv*/[]) {
-//   auto cout_buf = std::cout.rdbuf();
-//   auto cerr_buf = std::cerr.rdbuf();
-//   auto clog_buf = std::clog.rdbuf();
-
-//   grp::android_redirected_buf logcat;
-
-//   std::cout.rdbuf(&logcat);
-//   std::cerr.rdbuf(&logcat);
-//   std::clog.rdbuf(&logcat);
-
-//   using namespace std;
-
-//   grp::iengine* engine = grp::create_engine();
-//   engine->initialize("");
-//   grp::game* game = new grp::game(*engine);
-//   engine->set_game(game);
-
-//   using clock_timer = std::chrono::high_resolution_clock;
-//   using nano_sec = std::chrono::nanoseconds;
-//   using milli_sec = std::chrono::milliseconds;
-//   using time_point = std::chrono::time_point<clock_timer, nano_sec>;
-//   clock_timer timer;
-
-//   time_point start = timer.now();
-
-//   bool continue_loop = true;
-//   while (continue_loop) {
-//     time_point end_last_frame = timer.now();
-
-//     game->move_player(continue_loop);
-
-//     milli_sec frame_delta = std::chrono::duration_cast<milli_sec>(end_last_frame - start);
-
-//     if (frame_delta.count() < 24) // 1000 % 60 = 16.666 FPS
-//     {
-//       std::this_thread::yield();  // too fast, give other apps CPU time
-//       continue;                   // wait till more time
-//     }
-//     game->update();
-
-//     game->render();
-
-//     engine->draw_imgui();
-
-//     engine->swap_buffers();
-//     start = end_last_frame;
-//   }
-
-//   engine->uninitialize();
-//   std::cout.rdbuf(cout_buf);
-//   std::cerr.rdbuf(cerr_buf);
-//   std::clog.rdbuf(clog_buf);
-
-//   return EXIT_SUCCESS;
-// }
-// #endif

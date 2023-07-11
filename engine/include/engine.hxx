@@ -72,7 +72,7 @@ class texture {
 class sprite {
   public:
     sprite() = default;
-    sprite(float x1, float y1, float x2, float y2);
+    sprite(float x1, float y1, float x2, float y2, texture* textr);
     bool collision(std::array<float, 4> collision_entity);
     bool collision(float x, float y);
 
@@ -85,6 +85,7 @@ class sprite {
     std::array<float, 4> AABB;
     grp::triangle triangle_low_transformed;
     grp::triangle triangle_high_transformed;
+    grp::texture* mytexture;
 };
 
 class isound {
@@ -104,7 +105,7 @@ class iengine {
     virtual bool input_event_android(std::vector<grp::sprite>& buttons, bool* state_key) = 0;
 
     virtual void render(const triangle&) = 0;
-    virtual void render(const sprite&, texture* const texture) = 0;
+    virtual void render(const sprite&) = 0;
     virtual void render(const triangle&, texture* const texture) = 0;
     virtual texture* create_texture(std::string_view path) = 0;
 
@@ -117,7 +118,7 @@ class iengine {
     virtual void uninitialize() = 0;
     virtual void set_game(igame* g) = 0;
 
-    int weight = 640;
+    int weight = 960;
     int height = 480;
 
   protected:
@@ -133,6 +134,7 @@ class igame {
     virtual void update() = 0;
     virtual void render() = 0;
     virtual void ImGui_menu() = 0;
+    virtual void ImGui_hp_bar() = 0;
 };
 
 class opengl_shader_program final {

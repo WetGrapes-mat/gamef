@@ -1,13 +1,16 @@
 #include "bullet.hxx"
 #include <iostream>
 
-bullet::bullet(const glm::vec3& pos, float speed) {
+bullet::bullet(const glm::vec3& pos, float speed, grp::texture* textr) {
   this->bullet_pos = pos;
   if (speed < 0.f) {
     this->bullet_pos[1] -= 0.1f;
   };
-  this->sprite = {
-    bullet_pos[0] - 0.01f, bullet_pos[1] + 0.05f, bullet_pos[0] + 0.01f, bullet_pos[1] + 0.1f};
+  this->sprite = {bullet_pos[0] - 0.01f,
+                  bullet_pos[1] + 0.05f,
+                  bullet_pos[0] + 0.01f,
+                  bullet_pos[1] + 0.1f,
+                  textr};
   this->bullet_move_pos = {0.f, 0.f, 1.f};
 
   this->speed = speed;
@@ -22,9 +25,9 @@ void bullet::update() {
   this->bullet_move_pos[1] += speed;
 }
 
-void bullet::render(grp::iengine& engine, grp::texture& texture) {
+void bullet::render(grp::iengine& engine) {
   grp::get_transformed_triangle(this->sprite);
-  engine.render(this->sprite, &texture);
+  engine.render(this->sprite);
 }
 
 float bullet::out_of_screen() {

@@ -3,9 +3,9 @@
 
 class bullet : public ientity {
   public:
-    bullet(const glm::vec3& pos, float speed);
+    bullet(const glm::vec3& pos, float speed, grp::texture* textr);
     void update() override;
-    void render(grp::iengine& engine, grp::texture& texture) override;
+    void render(grp::iengine& engine) override;
     float out_of_screen();
 
   private:

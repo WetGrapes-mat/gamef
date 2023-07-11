@@ -19,6 +19,8 @@ file(COPY ${CMAKE_SOURCE_DIR}/assets/wave_list.json
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_SOURCE_DIR}/assets/config_game.json
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_SOURCE_DIR}/assets/config_list.json
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -29,9 +31,9 @@ endif()
 add_subdirectory(engine)
 
 set(GAME_SRC src/game.cxx src/player.cxx src/bullet.cxx src/enemy.cxx
-             src/main.cxx)
-set(GAME_INCLUDE include/player.hxx include/bullet.hxx include/enemy.hxx
-                 include/ientity.hxx)
+             src/bonus.cxx src/main.cxx)
+set(GAME_INCLUDE include/player.hxx include/bullet.hxx include/bonus.hxx
+                 include/enemy.hxx include/ientity.hxx)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
   add_library(game SHARED ${GAME_SRC} ${GAME_INCLUDE})
