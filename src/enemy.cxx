@@ -8,8 +8,8 @@ std::map<std::string, float> enemy::configMap = {};
 enemy::enemy(grp::texture* textr,
              grp::texture* bullet_text,
              std::map<std::string, float>& configMap) {
-  // pos = {rand_spawn(-0.9f, 0.9f), rand_spawn(1.2f, 10.f), 1.f};
-  pos = {rand_spawn(-0.9f, 0.9f), 0.8f, 1.f};
+  pos = {rand_spawn(-0.9f, 0.9f), rand_spawn(1.2f, 3.f), 1.f};
+  // pos = {rand_spawn(-0.9f, 0.9f), 0.8f, 1.f};
   this->scale = configMap["scale"];
   this->speed_y = -configMap["velocity"];
   this->hp = configMap["hp"];

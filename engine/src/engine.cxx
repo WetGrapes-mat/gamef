@@ -263,7 +263,7 @@ class engine final : public iengine {
 
       sprite::aspect_matrix = {1.f, 0.f, 0.f, 0.f, weight / height, 0.f, 0.f, 0.f, 1.f};
 
-      window = SDL_CreateWindow("title", weight, height, ::SDL_WINDOW_OPENGL);
+      window = SDL_CreateWindow("Space Invaders", weight, height, ::SDL_WINDOW_OPENGL);
       if (window == nullptr) {
         const char* err_message = SDL_GetError();
         serr << "error: failed call SDL_CreateWindow: " << err_message << endl;

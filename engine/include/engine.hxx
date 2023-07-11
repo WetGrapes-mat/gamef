@@ -118,7 +118,7 @@ class iengine {
     virtual void uninitialize() = 0;
     virtual void set_game(igame* g) = 0;
 
-    int weight = 960;
+    int weight = 640;
     int height = 480;
 
   protected:

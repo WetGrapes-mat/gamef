@@ -8,7 +8,7 @@
 
 #define MUSIC
 
-#define ASSPECT
+// #define ASSPECT
 
 namespace grp {
 
